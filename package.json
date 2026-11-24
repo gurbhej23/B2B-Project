@@ -1,0 +1,30 @@
+{
+  "name": "necessity-b2b-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Necessity India Pvt. Ltd. - Enterprise B2B Distributor, Retailer Ordering, Credit & Payment Management Platform",
+  "scripts": {
+    "dev:server": "pnpm --filter server dev",
+    "dev:web": "pnpm --filter admin-web dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "android:mobile": "pnpm --filter mobile android",
+    "start": "pnpm --filter mobile start",
+    "mobile": "pnpm --filter mobile start",
+    "build:shared": "pnpm --filter @necessity/shared build",
+    "build:server": "pnpm --filter server build",
+    "build:web": "pnpm --filter admin-web build",
+    "build": "pnpm --filter @necessity/shared build && pnpm --filter server build && pnpm --filter admin-web build",
+    "test:server": "pnpm --filter server test",
+    "test": "pnpm --filter server test",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.18",
+      "@types/react-dom": "^18.3.5"
+    }
+  }
+}

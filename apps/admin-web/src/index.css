@@ -1,0 +1,384 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #F47732;
+    --color-primary-deep: #E95B2A;
+    --color-primary-light: #FFF1E8;
+    --color-page-bg: #FFFFFF;
+    --color-card-bg: rgba(255, 255, 255, 0.90);
+    --color-highlight-bg: #FFF8F3;
+    --color-border: #F0E0D5;
+    --color-text-main: #292929;
+    --color-text-secondary: #737373;
+  }
+
+  html,
+  body,
+  #root {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    color: #292929;
+  }
+
+  /* Universal Form Input Reset: Remove browser default black inner outline on focus */
+  input,
+  textarea,
+  select {
+    outline: none !important;
+  }
+
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none !important;
+    outline-width: 0 !important;
+    outline-style: none !important;
+    outline-color: transparent !important;
+  }
+}
+
+/* Global fallback outside layer to guarantee high specificity across all browsers */
+input,
+textarea,
+select,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FFF1E8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #F0E0D5;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FB923C;
+}
+
+/* Financial number tabular figures for vertical alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Responsive & mobile momentum scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for clean horizontal chip filters on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Universal Fix for Fixed Overlays, Modal Dialogs & Forms:
+   Prevent .space-y-* rules (e.g. .space-y-6 > :not([hidden]) ~ :not([hidden]))
+   from injecting margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse))) into fixed modal wrappers */
+.space-y-6 > :not([hidden]) ~ .fixed,
+.space-y-6 > :not([hidden]) ~ [class*="fixed"],
+.space-y-4 > :not([hidden]) ~ .fixed,
+.space-y-4 > :not([hidden]) ~ [class*="fixed"],
+.space-y-6 > .fixed,
+.space-y-6 > [class*="fixed"],
+.space-y-4 > .fixed,
+.space-y-4 > [class*="fixed"],
+.fixed.inset-0,
+[class*="fixed"][class*="inset-0"] {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ==========================================================================
+   Table Alignment Rules: Honor Utility Classes (text-left, text-center, text-right)
+   ========================================================================== */
+table th.text-left,
+table td.text-left,
+table th[class*="text-left"],
+table td[class*="text-left"] {
+  text-align: left !important;
+}
+
+table th.text-center,
+table td.text-center,
+table th[class*="text-center"],
+table td[class*="text-center"] {
+  text-align: center !important;
+}
+
+table th.text-right,
+table td.text-right,
+table th[class*="text-right"],
+table td[class*="text-right"] {
+  text-align: right !important;
+}
+
+/* Explicit justify classes inside table cells must always be strictly honored */
+table th .justify-center,
+table td .justify-center,
+table th [class*="justify-center"],
+table td [class*="justify-center"] {
+  justify-content: center !important;
+}
+
+table th .justify-start,
+table td .justify-start,
+table th [class*="justify-start"],
+table td [class*="justify-start"] {
+  justify-content: flex-start !important;
+}
+
+table th .justify-end,
+table td .justify-end,
+table th [class*="justify-end"],
+table td [class*="justify-end"] {
+  justify-content: flex-end !important;
+}
+
+/* Flex / Inline-flex containers inside table headers and data cells (respecting explicit justify classes) */
+table th.text-left .flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-end):not([class*="justify-end"]),
+table td.text-left .flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-end):not([class*="justify-end"]),
+table th.text-left .inline-flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-end):not([class*="justify-end"]),
+table td.text-left .inline-flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-end):not([class*="justify-end"]) {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+table th.text-right .flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-start):not([class*="justify-start"]),
+table td.text-right .flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-start):not([class*="justify-start"]),
+table th.text-right .inline-flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-start):not([class*="justify-start"]),
+table td.text-right .inline-flex:not([role="switch"]):not(.justify-center):not([class*="justify-center"]):not(.justify-start):not([class*="justify-start"]) {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+table th.text-center .flex:not([role="switch"]):not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]),
+table td.text-center .flex:not([role="switch"]):not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]),
+table th.text-center .inline-flex:not([role="switch"]):not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]),
+table td.text-center .inline-flex:not([role="switch"]):not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]) {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Explicit styling for toggle switch controls to prevent handle clipping or translation drift */
+button[role="switch"],
+table td button[role="switch"],
+table th button[role="switch"] {
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+/* Block divs inside headers and cells respect alignment (except centered elements like avatar/thumbnail boxes) */
+table th.text-left > div:not(.justify-center):not([class*="justify-center"]),
+table td.text-left > div:not(.justify-center):not([class*="justify-center"]) {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  text-align: left !important;
+}
+
+table th.text-right > div:not(.justify-center):not([class*="justify-center"]),
+table td.text-right > div:not(.justify-center):not([class*="justify-center"]) {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  text-align: right !important;
+}
+
+table th.text-center > div:not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]),
+table td.text-center > div:not(.justify-start):not([class*="justify-start"]):not(.justify-end):not([class*="justify-end"]) {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+}
+
+/* ==========================================================================
+   Universal Stylish Dropdowns (Excluding Sidebar)
+   ========================================================================== */
+select:not(#admin-sidebar select):not(aside select):not([aria-label="Main Navigation"] select) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: #FFFFFF !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23F47732' stroke-width='2.25'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'%2F%3E%3C%2Fsvg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1rem 1rem !important;
+  padding-right: 2.25rem !important;
+  border-radius: 0.75rem !important;
+  border: 1.5px solid #F0E0D5 !important;
+  color: #292929 !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out !important;
+}
+
+select:not(#admin-sidebar select):not(aside select):not([aria-label="Main Navigation"] select):hover {
+  border-color: #F47732 !important;
+  background-color: #FFFDFB !important;
+  box-shadow: 0 4px 12px -2px rgba(244, 119, 50, 0.18), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+select:not(#admin-sidebar select):not(aside select):not([aria-label="Main Navigation"] select):focus,
+select:not(#admin-sidebar select):not(aside select):not([aria-label="Main Navigation"] select):focus-visible {
+  border-color: #F47732 !important;
+  box-shadow: 0 0 0 3px rgba(244, 119, 50, 0.22), 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  background-color: #FFFFFF !important;
+  outline: none !important;
+}
+
+select:not(#admin-sidebar select):not(aside select):not([aria-label="Main Navigation"] select):disabled {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+}
+
+select option {
+  background-color: #FFFFFF;
+  color: #292929;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #FFF1E8 !important;
+  color: #E95B2A !important;
+  font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   Custom Dropdown Menu Animation & Styling (Premium SaaS Aesthetic)
+   ========================================================================== */
+@keyframes dropdownFadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdown-in {
+  animation: dropdownFadeSlideDown 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+
+/* ==========================================================================
+   Universal Frosted Glass & Blurry Card System (Project-wide Glassmorphism)
+   ========================================================================== */
+.card,
+.glass-card,
+[class*="rounded-xl"][class*="bg-white"]:not(button):not(input):not(select):not(span),
+[class*="rounded-2xl"][class*="bg-white"]:not(button):not(input):not(select):not(span),
+[class*="rounded-3xl"][class*="bg-white"]:not(button):not(input):not(select):not(span),
+[class*="rounded-lg"][class*="bg-white"][class*="border"]:not(button):not(input):not(select):not(span),
+[class*="rounded-xl"][class*="border"][class*="shadow"]:not(button):not(input):not(select):not(span),
+[class*="rounded-2xl"][class*="border"][class*="shadow"]:not(button):not(input):not(select):not(span) {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+}
+
+/* Modals, Floating Dropdowns, Dialogs */
+.modal-content,
+[role="dialog"] > div,
+[role="dialog"] [class*="bg-white"]:not(button):not(input):not(select):not(span),
+[class*="shadow-xl"][class*="bg-white"]:not(div[class*="fixed"] *):not(button):not(input):not(select):not(span),
+[class*="shadow-2xl"][class*="bg-white"]:not(div[class*="fixed"] *):not(button):not(input):not(select):not(span) {
+  background-color: rgba(255, 255, 255, 0.90) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+}
+
+/* Modals & Dialog Windows: STRICTLY Solid Pure White (#FFFFFF) to avoid gray overlay bleed-through */
+.modal-card,
+.modal-dialog,
+div[class*="fixed"][class*="inset-0"] .modal-card,
+div[class*="fixed"][class*="inset-0"] > div > [class*="bg-white"],
+div[class*="fixed"][class*="inset-0"] [class*="rounded-2xl"][class*="bg-white"],
+div[class*="fixed"][class*="inset-0"] [class*="rounded-xl"][class*="bg-white"] {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Subtle tinted sub-cards & banners */
+[class*="bg-[#FFF8F3]"][class*="rounded"]:not(button):not(input):not(select):not(span),
+[class*="bg-[#FFF1E8]"][class*="rounded"]:not(button):not(input):not(select):not(span),
+[class*="bg-slate-50"][class*="rounded"]:not(button):not(input):not(select):not(span),
+[class*="bg-[#F0F4FF]"][class*="rounded"]:not(button):not(input):not(select):not(span) {
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}
+
+/* Table container cards */
+table,
+tbody,
+tfoot {
+  background-color: transparent !important;
+}
+
+/* Ensure Table Headers honor bg-[#FFF8F3] */
+thead[class*="bg-[#FFF8F3]"],
+thead tr[class*="bg-[#FFF8F3]"],
+tr[class*="bg-[#FFF8F3]"] > th,
+th[class*="bg-[#FFF8F3]"] {
+  background-color: #FFF8F3 !important;
+}
+
+table tr {
+  transition: background-color 0.15s ease;
+}
+
+table tr:hover {
+  background-color: rgba(255, 248, 243, 0.6) !important;
+}
+
+/* Modal Backdrops & Overlays (Universal Backdrop Blur) */
+.modal-backdrop,
+div[class*="fixed"][class*="inset-0"][class*="bg-black"],
+div[class*="fixed"][class*="inset-0"][class*="bg-slate-900"],
+div[class*="absolute"][class*="inset-0"][class*="bg-black"],
+div[class*="absolute"][class*="inset-0"][class*="bg-slate-900"] {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Fallback for backdrop-blur-xs */
+.backdrop-blur-xs {
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+
+

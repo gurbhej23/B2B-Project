@@ -1,0 +1,4 @@
+D:/B2B proj/apps/mobile/android/app/.cxx/Debug/58616x3l/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
+D:/B2B proj/apps/mobile/android/app/.cxx/Debug/58616x3l/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
+D:/B2B proj/apps/mobile/android/app/.cxx/Debug/58616x3l/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
+D:/B2B proj/apps/mobile/android/app/.cxx/Debug/58616x3l/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir
