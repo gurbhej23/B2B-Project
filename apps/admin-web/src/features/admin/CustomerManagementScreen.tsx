@@ -714,25 +714,25 @@ export const CustomerManagementScreen: React.FC = () => {
           <table className="w-full text-left border-collapse min-w-[850px]">
             <thead>
               <tr className="bg-[#FFF8F3] border-b border-[#F0E0D5] text-[#292929] font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4 text-center w-[23%]">
+                <th className="py-3 px-4 text-center">
                   Customer
                 </th>
-                <th className="py-3 px-4 text-center w-[12%]">
+                <th className="py-3 px-4 text-center">
                   Contact
                 </th>
-                <th className="py-3 px-4 text-center w-[16%]">
+                <th className="py-3 px-4 text-center">
                   Business
                 </th>
-                <th className="py-3 px-4 text-center w-[14%]">
+                <th className="py-3 px-4 text-center">
                   Type
                 </th>
-                <th className="py-3 px-4 text-center w-[14%]">
+                <th className="py-3 px-4 text-center">
                   Registered
                 </th>
-                <th className="py-3 px-4 text-center w-[10%]">
+                <th className="py-3 px-4 text-center">
                   Status
                 </th>
-                <th className="w-[10%]">
+                <th className="">
                 </th>
               </tr>
             </thead>
@@ -772,7 +772,7 @@ export const CustomerManagementScreen: React.FC = () => {
                   return (
                     <tr key={cust.id || cust._id} className="hover:bg-slate-50/80 transition-colors">
                       {/* Customer */}
-                      <td className="py-3.5 px-4 text-left">
+                      <td className="py-3.5 px-4 text-center">
                         <div className="flex items-left gap-3">
                           <div className="min-w-0">
                             <div className="font-bold text-[#292929] text-xs truncate">
@@ -786,14 +786,14 @@ export const CustomerManagementScreen: React.FC = () => {
                       </td>
 
                       {/* Contact */}
-                      <td className="py-3.5 px-4 text-left whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="text-xs font-medium text-[#292929]">
                           {cust.phone ? (cust.phone.startsWith('+91') ? cust.phone : `+91 ${cust.phone}`) : '—'}
                         </div>
                       </td>
 
                       {/* Business */}
-                      <td className="py-3.5 px-4 text-left">
+                      <td className="py-3.5 px-4 text-center">
                         <div className="min-w-0">
                           <div className="font-bold text-[#292929] text-xs truncate">
                             {cust.businessName || cust.tradeName || '—'}
@@ -805,7 +805,7 @@ export const CustomerManagementScreen: React.FC = () => {
                       </td>
 
                       {/* TYPE */}
-                      <td className="py-3.5 px-4 text-left whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {(() => {
                           const rawType = String(cust.customerType || '').toLowerCase();
                           let label = 'Regular';
@@ -829,7 +829,7 @@ export const CustomerManagementScreen: React.FC = () => {
                       </td>
 
                       {/* Registered */}
-                      <td className="py-3.5 px-4 text-xs text-[#292929] whitespace-nowrap text-left">
+                      <td className="py-3.5 px-4 text-xs text-[#292929] whitespace-nowrap text-center">
                         {new Date(cust.createdAt).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -838,7 +838,7 @@ export const CustomerManagementScreen: React.FC = () => {
                       </td>
 
                       {/* STATUS (Orange switch when active) */}
-                      <td className="py-3.5 px-4 text-left whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <button
                           type="button"
                           role="switch"
@@ -859,7 +859,7 @@ export const CustomerManagementScreen: React.FC = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-left whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5 justify-end">
                           {isPending && (
                             <>

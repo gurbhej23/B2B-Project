@@ -11,6 +11,10 @@ out/
 # Expo and mobile artifacts
 .expo/
 .expo-shared/
+.gradle/
+**/android/.gradle/
+**/android/app/.cxx/
+*.tsbuildinfo
 *.jks
 *.p8
 *.p12

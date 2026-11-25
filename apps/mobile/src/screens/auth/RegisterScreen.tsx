@@ -54,29 +54,6 @@ const INDIAN_STATES = [
   'Puducherry',
 ];
 
-const CUSTOMER_TYPES = [
-  { id: 'retailer', label: 'Retailer', badge: 'Standard Wholesale', desc: 'Kirana store or retail counter purchasing inventory' },
-  { id: 'wholesaler', label: 'Wholesaler', badge: 'Tiered Bulk Rates', desc: 'Bulk stockist purchasing full carton case quantities' },
-  { id: 'distributor', label: 'Distributor', badge: 'Maximum Margin', desc: 'Regional distributor managing local retail networks' },
-];
-
-const BUSINESS_CONSTITUTIONS = [
-  'Proprietorship',
-  'Partnership',
-  'Private Limited Company',
-  'Limited Liability Partnership (LLP)',
-  'Retailer / Kirana Store',
-  'Other',
-];
-
-const DOCUMENT_TYPES = [
-  'GST Registration Certificate',
-  'Shop & Establishment License',
-  'Trade License / Udyam Aadhar',
-  'FSSAI Food License',
-  'Business PAN Card',
-];
-
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
@@ -94,11 +71,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   // Step 2: Business Details
   const [businessName, setBusinessName] = useState('');
-  const [requestedCustomerType, setRequestedCustomerType] = useState('retailer');
   const [isGstRegistered, setIsGstRegistered] = useState(true);
   const [gstin, setGstin] = useState('');
   const [pan, setPan] = useState('');
-  const [businessType, setBusinessType] = useState('Proprietorship');
 
   // Step 3: Business Address
   const [addressLine1, setAddressLine1] = useState('');
@@ -108,17 +83,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [pincode, setPincode] = useState('');
   const [showStateModal, setShowStateModal] = useState(false);
 
-  // Step 4: Additional Info
-  const [sameAsBilling, setSameAsBilling] = useState(true);
-  const [shippingAddress, setShippingAddress] = useState('');
-  const [shippingCity, setShippingCity] = useState('');
-  const [shippingState, setShippingState] = useState('Maharashtra');
-  const [shippingPincode, setShippingPincode] = useState('');
-  const [alternatePhone, setAlternatePhone] = useState('');
-  const [docType, setDocType] = useState('GST Registration Certificate');
-  const [docNumber, setDocNumber] = useState('');
-
-  // Step 5: Review & Submit
+  // Step 4: Review & Submit
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -201,40 +166,18 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     return null;
   };
 
-  const validateStep4 = (): string | null => {
-    if (!sameAsBilling) {
-      if (!shippingAddress.trim() || shippingAddress.trim().length < 3) {
-        return 'Please enter shipping street address.';
-      }
-      if (!shippingCity.trim() || shippingCity.trim().length < 2) {
-        return 'Please enter shipping city.';
-      }
-      if (!shippingPincode.trim() || !PINCODE_REGEX.test(shippingPincode.trim())) {
-        return 'Please enter a valid 6-digit shipping PIN code.';
-      }
-    }
-    if (alternatePhone.trim()) {
-      const cleanAlt = alternatePhone.trim().replace(/\s+/g, '');
-      if (!PHONE_REGEX.test(cleanAlt)) {
-        return 'Alternate phone number must be a valid 10-digit mobile.';
-      }
-    }
-    return null;
-  };
-
   const handleNextStep = () => {
     setErrorMessage(null);
     let err: string | null = null;
     if (currentStep === 1) err = validateStep1();
     else if (currentStep === 2) err = validateStep2();
     else if (currentStep === 3) err = validateStep3();
-    else if (currentStep === 4) err = validateStep4();
 
     if (err) {
       setErrorMessage(err);
       return;
     }
-    setCurrentStep((prev) => Math.min(5, prev + 1));
+    setCurrentStep((prev) => Math.min(4, prev + 1));
   };
 
   const handlePrevStep = () => {
@@ -270,13 +213,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    const step4Err = validateStep4();
-    if (step4Err) {
-      setErrorMessage(step4Err);
-      setCurrentStep(4);
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const cleanPhone = phone.trim().replace(/\s+/g, '').replace(/^\+91/, '');
@@ -293,33 +229,13 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         isDefault: true,
       };
 
-      const deliveryAddress = sameAsBilling
-        ? billingAddress
-        : {
-            street: shippingAddress.trim(),
-            city: shippingCity.trim(),
-            state: shippingState.trim(),
-            pincode: shippingPincode.trim(),
-            stateCode: '27',
-            isDefault: false,
-          };
-
-      const docs = docNumber.trim()
-        ? [
-            {
-              documentType: docType,
-              documentNumber: docNumber.trim(),
-            },
-          ]
-        : [];
-
       const payload = {
         name: fullName.trim(),
         contactPerson: fullName.trim(),
         businessName: businessName.trim(),
-        businessType: businessType.trim(),
-        requestedCustomerType: requestedCustomerType.toLowerCase(),
-        customerType: requestedCustomerType.toLowerCase(),
+        businessType: 'Retailer',
+        requestedCustomerType: 'retailer',
+        customerType: 'retailer',
         email: email.trim().toLowerCase(),
         phone: cleanPhone,
         address: fullStreet,
@@ -327,11 +243,11 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         state: state.trim(),
         pincode: pincode.trim(),
         billingAddress,
-        deliveryAddress,
-        deliveryAddresses: [deliveryAddress],
+        deliveryAddress: billingAddress,
+        deliveryAddresses: [billingAddress],
         gstin: isGstRegistered && gstin.trim() ? gstin.trim().toUpperCase() : undefined,
         pan: pan.trim() ? pan.trim().toUpperCase() : undefined,
-        businessDocuments: docs,
+        businessDocuments: [],
         password,
         confirmPassword,
         termsAccepted: true,
@@ -343,7 +259,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         email: email.trim().toLowerCase(),
         phone: cleanPhone,
         businessName: businessName.trim(),
-        customerType: requestedCustomerType,
+        customerType: 'retailer',
         referenceId: result?.retailerId || result?._id || `REG-${Date.now().toString().slice(-6)}`,
       });
       setIsSubmittedSuccessfully(true);
@@ -414,12 +330,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.summaryValue}>{submittedData?.businessName}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Requested Account</Text>
-              <Text style={styles.summaryValueType}>
-                {submittedData?.customerType?.toUpperCase()}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Primary Contact</Text>
               <Text style={styles.summaryValue}>{submittedData?.name}</Text>
             </View>
@@ -488,13 +398,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.headerBackIcon}>←</Text>
           </TouchableOpacity>
           <View style={styles.wizardTitleBox}>
-            <Text style={styles.wizardStepText}>Step {currentStep} of 5</Text>
+            <Text style={styles.wizardStepText}>Step {currentStep} of 4</Text>
             <Text style={styles.wizardHeaderTitle}>
               {currentStep === 1 && 'Account Credentials'}
               {currentStep === 2 && 'Business Details'}
               {currentStep === 3 && 'Premises Address'}
-              {currentStep === 4 && 'Commercial Preferences'}
-              {currentStep === 5 && 'Review & Submit'}
+              {currentStep === 4 && 'Review & Submit'}
             </Text>
           </View>
           <TouchableOpacity
@@ -505,9 +414,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* 5-Segment Progress Bar */}
+        {/* 4-Segment Progress Bar */}
         <View style={styles.stepProgressBar}>
-          {[1, 2, 3, 4, 5].map((step) => (
+          {[1, 2, 3, 4].map((step) => (
             <View
               key={`step-bar-${step}`}
               style={[
@@ -524,8 +433,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.stepLabelItem, currentStep === 1 && styles.stepLabelItemActive]}>Account</Text>
           <Text style={[styles.stepLabelItem, currentStep === 2 && styles.stepLabelItemActive]}>Business</Text>
           <Text style={[styles.stepLabelItem, currentStep === 3 && styles.stepLabelItemActive]}>Address</Text>
-          <Text style={[styles.stepLabelItem, currentStep === 4 && styles.stepLabelItemActive]}>Preferences</Text>
-          <Text style={[styles.stepLabelItem, currentStep === 5 && styles.stepLabelItemActive]}>Review</Text>
+          <Text style={[styles.stepLabelItem, currentStep === 4 && styles.stepLabelItemActive]}>Review</Text>
         </View>
       </View>
 
@@ -635,7 +543,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.stepContent}>
             <View style={styles.stepInfoBox}>
               <Text style={styles.stepHeadline}>Business Verification</Text>
-              <Text style={styles.stepSubline}>Choose your customer tier and enter official registration details.</Text>
+              <Text style={styles.stepSubline}>Enter your business name and official tax registration details.</Text>
             </View>
 
             <Text style={styles.inputLabel}>Registered Business Name *</Text>
@@ -647,35 +555,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 value={businessName}
                 onChangeText={setBusinessName}
               />
-            </View>
-
-            {/* Requested Customer Type Selector */}
-            <Text style={styles.inputLabel}>Requested Customer Type *</Text>
-            <View style={styles.tierSelectorGroup}>
-              {CUSTOMER_TYPES.map((tier) => {
-                const isSelected = requestedCustomerType === tier.id;
-                return (
-                  <TouchableOpacity
-                    key={tier.id}
-                    style={[styles.tierCard, isSelected && styles.tierCardActive]}
-                    onPress={() => setRequestedCustomerType(tier.id)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.tierCardTop}>
-                      <View style={[styles.radioCircle, isSelected && styles.radioCircleActive]}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
-                      <Text style={[styles.tierLabel, isSelected && styles.tierLabelActive]}>
-                        {tier.label}
-                      </Text>
-                      <View style={styles.tierBadge}>
-                        <Text style={styles.tierBadgeText}>{tier.badge}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.tierDesc}>{tier.desc}</Text>
-                  </TouchableOpacity>
-                );
-              })}
             </View>
 
             {/* GST Registered Toggle */}
@@ -731,22 +610,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 maxLength={10}
               />
             </View>
-
-            {/* Business Constitution */}
-            <Text style={styles.inputLabel}>Business Constitution</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
-              {BUSINESS_CONSTITUTIONS.map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={[styles.pillBtn, businessType === item && styles.pillBtnActive]}
-                  onPress={() => setBusinessType(item)}
-                >
-                  <Text style={[styles.pillText, businessType === item && styles.pillTextActive]}>
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
           </View>
         )}
 
@@ -822,113 +685,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
 
-        {/* STEP 4: Additional Info */}
+        {/* STEP 4: Review & Submit */}
         {currentStep === 4 && (
-          <View style={styles.stepContent}>
-            <View style={styles.stepInfoBox}>
-              <Text style={styles.stepHeadline}>Delivery & Documents</Text>
-              <Text style={styles.stepSubline}>Configure delivery locations and attach commercial licenses.</Text>
-            </View>
-
-            {/* Same As Billing Toggle */}
-            <View style={styles.toggleRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>Delivery to Billing Address?</Text>
-                <Text style={styles.toggleSub}>Ship wholesale consignments to registered premises</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.switchToggle, sameAsBilling && styles.switchToggleActive]}
-                onPress={() => setSameAsBilling((p) => !p)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.switchKnob, sameAsBilling && styles.switchKnobActive]} />
-              </TouchableOpacity>
-            </View>
-
-            {/* If Not Same As Billing, show shipping fields */}
-            {!sameAsBilling && (
-              <View style={styles.shippingSectionBox}>
-                <Text style={styles.subSectionTitle}>Commercial Shipping Destination</Text>
-
-                <Text style={styles.inputLabel}>Shipping Address *</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="Warehouse / Depot Address"
-                    placeholderTextColor={colors.textSecondary}
-                    value={shippingAddress}
-                    onChangeText={setShippingAddress}
-                  />
-                </View>
-
-                <Text style={styles.inputLabel}>Shipping City *</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="City"
-                    placeholderTextColor={colors.textSecondary}
-                    value={shippingCity}
-                    onChangeText={setShippingCity}
-                  />
-                </View>
-
-                <Text style={styles.inputLabel}>Shipping PIN Code *</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="6-digit PIN"
-                    placeholderTextColor={colors.textSecondary}
-                    value={shippingPincode}
-                    onChangeText={setShippingPincode}
-                    keyboardType="numeric"
-                    maxLength={6}
-                  />
-                </View>
-              </View>
-            )}
-
-            <Text style={styles.inputLabel}>Alternate Phone / WhatsApp (Optional)</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="e.g. 9123456789"
-                placeholderTextColor={colors.textSecondary}
-                value={alternatePhone}
-                onChangeText={setAlternatePhone}
-                keyboardType="phone-pad"
-                maxLength={10}
-              />
-            </View>
-
-            {/* Business Verification Document Identifier */}
-            <Text style={styles.inputLabel}>Verification Document / License</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillScroll}>
-              {DOCUMENT_TYPES.map((dt) => (
-                <TouchableOpacity
-                  key={dt}
-                  style={[styles.pillBtn, docType === dt && styles.pillBtnActive]}
-                  onPress={() => setDocType(dt)}
-                >
-                  <Text style={[styles.pillText, docType === dt && styles.pillTextActive]}>{dt}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <Text style={styles.inputLabel}>Document / License Number</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="e.g. Registration number or certificate ID"
-                placeholderTextColor={colors.textSecondary}
-                value={docNumber}
-                onChangeText={setDocNumber}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* STEP 5: Review & Submit */}
-        {currentStep === 5 && (
           <View style={styles.stepContent}>
             <View style={styles.stepInfoBox}>
               <Text style={styles.stepHeadline}>Review Your Application</Text>
@@ -957,8 +715,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
               <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>Firm:</Text> {businessName}</Text>
-              <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>Tier:</Text> {requestedCustomerType.toUpperCase()}</Text>
-              <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>Type:</Text> {businessType}</Text>
               <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>GSTIN:</Text> {isGstRegistered ? gstin || 'Not Entered' : 'Unregistered'}</Text>
               {pan.trim() ? <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>PAN:</Text> {pan.toUpperCase()}</Text> : null}
             </View>
@@ -974,18 +730,6 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.reviewItem}>• {addressLine1}</Text>
               {addressLine2 ? <Text style={styles.reviewItem}>• {addressLine2}</Text> : null}
               <Text style={styles.reviewItem}>• {city}, {state} - {pincode}</Text>
-            </View>
-
-            {/* Section 4 Review */}
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewCardHeader}>
-                <Text style={styles.reviewCardTitle}>4. Preferences</Text>
-                <TouchableOpacity onPress={() => setCurrentStep(4)} style={styles.editBtn}>
-                  <Text style={styles.editBtnText}>Edit</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>Delivery:</Text> {sameAsBilling ? 'Same as billing address' : `${shippingAddress}, ${shippingCity} - ${shippingPincode}`}</Text>
-              {docNumber ? <Text style={styles.reviewItem}>• <Text style={styles.reviewBold}>{docType}:</Text> {docNumber}</Text> : null}
             </View>
 
             {/* Terms and Conditions Checkbox */}
@@ -1021,7 +765,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
           )}
 
-          {currentStep < 5 ? (
+          {currentStep < 4 ? (
             <TouchableOpacity
               style={[styles.nextStepBtn, currentStep === 1 && { flex: 1 }]}
               onPress={handleNextStep}

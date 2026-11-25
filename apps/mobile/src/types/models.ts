@@ -120,12 +120,12 @@ export interface Product {
   uom: string;
   packSize: number;
   caseQuantity?: number;
-  mrpPaise?: number;
+  mrpPaise: number;
   dealerPricePaise: number;
   hsnCode?: string;
   gstRatePercent?: number;
   minOrderQuantity: number;
-  orderQuantityMultiple?: number;
+  orderQuantityMultiple: number;
   stockOnHand: number;
   stockReserved: number;
   lowStockThreshold: number;

@@ -366,14 +366,14 @@ export const OrdersListScreen: React.FC = () => {
                       onClick={() => setSelectedOrder(order)}
                     >
                       {/* ORDER: Number + Time */}
-                      <td className="py-3 px-6 text-left whitespace-nowrap">
+                      <td className="py-3 px-6 text-center whitespace-nowrap">
                         <div className="font-semibold text-slate-900 text-sm">
                           {order.orderNumber}
                         </div>
                       </td>
 
                       {/* CUSTOMER: Circle initial + Name + Phone */}
-                      <td className="py-3 px-6 text-left whitespace-nowrap">
+                      <td className="py-3 px-6 text-center whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div>
                             <div className="font-semibold text-slate-800 text-xs">
@@ -414,7 +414,7 @@ export const OrdersListScreen: React.FC = () => {
                       </td>
 
                       {/* ACTION: View button */}
-                      <td className="py-3 px-6 text-right whitespace-nowrap">
+                      <td className="py-3 px-6 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={(e) => {
