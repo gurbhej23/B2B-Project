@@ -5,6 +5,7 @@ import { PaymentTransaction } from '../payments/payment.model';
 import { Invoice } from '../invoices/invoice.model';
 import { auditLogger } from '../audit/audit.service';
 import { ApiError } from '../../utils/api-error';
+import { escapeRegex } from '../../utils/security';
 import {
   CreditStatus,
   LedgerEntryType,
@@ -57,7 +58,7 @@ export class CreditService {
     }
 
     if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = new RegExp(escapeRegex(search.trim()), 'i');
       filter.$or = [
         { businessName: regex },
         { tradeName: regex },

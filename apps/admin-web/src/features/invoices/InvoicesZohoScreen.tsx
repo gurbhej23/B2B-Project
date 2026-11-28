@@ -366,7 +366,7 @@ export const InvoicesZohoScreen: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#F0E0D5]">
-        <div className="flex items-center space-x-3">
+        <div className="hidden lg:flex items-center space-x-3">
           <div className="p-2.5 bg-[#FFF1E8] border border-[#F0E0D5] rounded-xl text-[#F47732] shadow-xs">
             <Receipt className="h-6 w-6" />
           </div>
@@ -470,7 +470,7 @@ export const InvoicesZohoScreen: React.FC = () => {
           <div className="mt-2 text-xl font-bold text-amber-600">
             {summary.overdueCount || 0}
           </div>
-          <p className="mt-1 text-[11px] text-[#737373]">Past agreed credit due date</p>
+          <p className="mt-1 text-[11px] text-[#737373]">Past payment due date</p>
         </div>
       </div>
 
@@ -1022,8 +1022,8 @@ export const InvoicesZohoScreen: React.FC = () => {
                   {selectedInvoice.items?.length || 0} line items
                 </span>
               </div>
-              <div className="border border-[#F0E0D5] rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-xs">
+              <div className="border border-[#F0E0D5] rounded-xl overflow-x-auto touch-scroll shadow-xs">
+                <table className="w-full text-xs min-w-[580px]">
                   <thead className="bg-[#FFF8F3] text-[#292929] font-bold uppercase text-[10px] tracking-wider border-b border-[#F0E0D5]">
                     <tr className="h-9">
                       <th className="py-2 px-3 text-left">SKU / Item</th>
@@ -1123,8 +1123,8 @@ export const InvoicesZohoScreen: React.FC = () => {
                   No payment transactions recorded yet for this invoice.
                 </div>
               ) : (
-                <div className="border border-[#F0E0D5] rounded-xl overflow-hidden shadow-xs">
-                  <table className="w-full text-xs">
+                <div className="border border-[#F0E0D5] rounded-xl overflow-x-auto touch-scroll shadow-xs">
+                  <table className="w-full text-xs min-w-[480px]">
                     <thead className="bg-[#FFF8F3] text-[#292929] font-bold uppercase text-[10px] tracking-wider border-b border-[#F0E0D5]">
                       <tr className="h-8">
                         <th className="py-2 px-3 text-left">Date</th>

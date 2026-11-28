@@ -180,15 +180,24 @@ export const StockManagementScreen: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#F0E0D5]">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#292929] tracking-tight flex items-center gap-2">
-            <Boxes className="h-7 w-7 text-[#F47732]" />
+        <div className="hidden lg:block">
+          <h1 className="text-2xl font-black text-[#292929] tracking-tight flex items-center gap-2">
+            <Boxes className="h-6 w-6 text-[#F47732]" />
             Inventory Products
           </h1>
           <p className="text-xs sm:text-sm text-[#737373] mt-1">
             Monitor real-time product inventory, SKU availability, and perform stock adjustments.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => fetchProducts()}
+          disabled={isLoadingProducts}
+          className="self-end sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] rounded-lg shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#F47732] disabled:opacity-50 flex-shrink-0"
+          title="Refresh inventory"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoadingProducts ? 'animate-spin text-[#F47732]' : 'text-[#737373]'}`} />
+        </button>
       </div>
 
       {/* Search Bar, Filter & Refresh */}
@@ -239,16 +248,6 @@ export const StockManagementScreen: React.FC = () => {
               title="Filter inventory by stock level"
             />
           </div>
-
-          <button
-            type="button"
-            onClick={() => fetchProducts()}
-            disabled={isLoadingProducts}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] rounded-lg shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#F47732] disabled:opacity-50 flex-shrink-0"
-            title="Refresh inventory"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoadingProducts ? 'animate-spin text-[#F47732]' : 'text-[#737373]'}`} />
-          </button>
         </div>
       </div>
 
@@ -425,7 +424,7 @@ export const StockManagementScreen: React.FC = () => {
 
       {/* Stock Adjustment Modal */}
       {adjustingProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-[#F0E0D5] animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="bg-[#FFF8F3] border-b border-[#F0E0D5] p-5">

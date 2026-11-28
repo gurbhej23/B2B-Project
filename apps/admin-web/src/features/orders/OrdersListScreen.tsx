@@ -25,6 +25,7 @@ import {
   Check,
   RefreshCw,
   X,
+  ShoppingBag,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -173,10 +174,11 @@ export const OrdersListScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0E0D5]">
-        <div>
-          <h1 className="text-2xl font-black text-[#292929] tracking-tight">
-            {isStaff ? 'Enterprise Orders Management' : 'My Wholesale Orders'}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-[#F0E0D5]">
+        <div className="hidden lg:block">
+          <h1 className="text-2xl font-black text-[#292929] tracking-tight flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-[#F47732]" />
+            {isStaff ? 'Orders & Shipments' : 'My Orders'}
           </h1>
 
           <p className="text-xs text-[#737373] mt-0.5">
@@ -206,10 +208,10 @@ export const OrdersListScreen: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white/80 backdrop-blur-md p-2 rounded-xl border border-[#F0E0D5] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="bg-white rounded-xl space-y-4 relative z-30">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between relative z-30">
           {/* Search */}
-          <div className="relative w-full sm:w-80">
+          <div className="relative w-full">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
 
             <input
@@ -217,12 +219,12 @@ export const OrdersListScreen: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by order number or customer..."
-              className="w-full text-xs pl-9 pr-4 py-2 border border-[#F0E0D5] rounded-xl bg-white text-[#292929] focus:outline-none focus:border-[#F47732] focus:ring-1 focus:ring-[#F47732]"
+              className="w-full pl-10 pr-10 py-2 text-sm border border-[#F0E0D5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732] transition-all shadow-xs"
             />
           </div>
 
           {/* Custom Status Dropdown */}
-          <div className="relative w-full sm:w-60" ref={statusDropdownRef}>
+          <div className={`relative w-full sm:w-60 ${statusDropdownOpen ? 'z-50' : 'z-20'}`} ref={statusDropdownRef}>
             <button
               id="order-status-filter"
               type="button"
@@ -252,7 +254,7 @@ export const OrdersListScreen: React.FC = () => {
               <div
                 role="listbox"
                 aria-label="Filter orders by status"
-                className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-xl border border-[#F0E0D5] bg-white p-1.5 shadow-xl shadow-[#6B3415]/10"
+                className="absolute left-0 right-0 top-full z-[100] mt-1.5 rounded-xl border border-[#F0E0D5] bg-white p-1.5 shadow-xl shadow-[#6B3415]/15"
               >
                 {statusOptions.map((opt) => {
                   const isSelected = selectedStatus === opt.value;
@@ -283,7 +285,7 @@ export const OrdersListScreen: React.FC = () => {
       </div>
 
       {/* Orders Table Container matching reference design */}
-      <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm overflow-hidden relative z-10">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-xs min-w-[850px]">
             <thead>

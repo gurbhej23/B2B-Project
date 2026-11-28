@@ -63,6 +63,29 @@ export interface SendPaymentReceivedEmailParams {
   notes?: string;
 }
 
+export interface SendPaymentFailedEmailParams {
+  to: string;
+  customerName: string;
+  businessName: string;
+  orderNumber: string;
+  orderDate?: Date;
+  amountPaise: number;
+  paymentMethod: string;
+  referenceNumber?: string;
+  reason?: string;
+}
+
+export interface SendPaymentRefundedEmailParams {
+  to: string;
+  customerName: string;
+  businessName: string;
+  orderNumber: string;
+  amountRefundedPaise: number;
+  paymentMethod: string;
+  refundId: string;
+  reason?: string;
+}
+
 export interface SendApprovalEmailParams {
   to: string;
   customerName: string;
@@ -1526,6 +1549,257 @@ Necessity India Pvt. Ltd.
       };
     } catch (error: any) {
       logger.error(`[EmailService] Failed to send Payment Received email for order ${params.orderNumber} to ${params.to}: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 1.I: Send "Payment Unsuccessful / Failed" email
+   */
+  static async sendPaymentFailedEmail(params: SendPaymentFailedEmailParams): Promise<EmailSendResult> {
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      logger.info(`[EmailService] SMTP not configured. Skipped sending Payment Failed email for order ${params.orderNumber} to ${params.to}.`);
+      return {
+        success: false,
+        skipped: true,
+        error: 'SMTP provider is not configured. Email notification skipped.',
+      };
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Unsuccessful – Necessity India</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background: #252525; padding: 24px 28px; text-align: left; border-bottom: 3px solid #dc2626; }
+    .header h1 { margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+    .header p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; }
+    .body-content { padding: 28px; }
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; background-color: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+    .headline { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; }
+    .subtext { font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px; }
+    .footer { background: #f8fafc; padding: 20px 28px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #64748b; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Necessity India</h1>
+      <p>Institutional Wholesale & Facility Supplies</p>
+    </div>
+    <div class="body-content">
+      <div class="badge">Payment Unsuccessful</div>
+      <h2 class="headline">Payment Transaction Not Completed</h2>
+      <p class="subtext">
+        Dear <strong>${params.customerName}</strong> (${params.businessName}),<br/>
+        We were unable to process your payment for Order <strong>#${params.orderNumber}</strong>. No funds have been settled for this transaction.
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #fca5a5;">Order Number:</td>
+          <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #fca5a5;">#${params.orderNumber}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #fca5a5;">Attempted Amount:</td>
+          <td style="padding: 8px 14px; font-size: 14px; color: #b91c1c; font-weight: 800; text-align: right; border-bottom: 1px dashed #fca5a5;">${formatPaiseToINR(params.amountPaise)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #fca5a5;">Payment Method:</td>
+          <td style="padding: 8px 14px; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #fca5a5;">${params.paymentMethod}</td>
+        </tr>
+        ${params.referenceNumber ? `
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #fca5a5;">Reference / Ref ID:</td>
+          <td style="padding: 8px 14px; font-size: 13px; font-family: monospace; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #fca5a5;">${params.referenceNumber}</td>
+        </tr>` : ''}
+        ${params.reason ? `
+        <tr>
+          <td style="padding: 10px 14px; font-size: 13px; color: #64748b;">Reason / Status:</td>
+          <td style="padding: 10px 14px; font-size: 13px; color: #b91c1c; font-weight: 700; text-align: right;">${params.reason}</td>
+        </tr>` : ''}
+      </table>
+
+      <p style="font-size: 13px; color: #475569; margin-top: 20px;">
+        Your order is safely preserved. You can open the <strong>Necessity B2B</strong> mobile app, go to <strong>Orders</strong>, and tap <strong>Pay Balance via Razorpay</strong> to retry your payment with UPI, Card, or Netbanking.
+      </p>
+    </div>
+    <div class="footer">
+      <p><strong>Necessity India Pvt. Ltd.</strong></p>
+      <p>Support: <a href="mailto:${ENV.SUPPORT_EMAIL}" style="color: #F47721; text-decoration: none;">${ENV.SUPPORT_EMAIL}</a> | Phone: ${ENV.SUPPORT_PHONE}</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const textContent = `
+Payment Unsuccessful – Necessity India
+Order: #${params.orderNumber}
+Customer: ${params.customerName} (${params.businessName})
+
+Attempted Amount: ${formatPaiseToINR(params.amountPaise)}
+Payment Method: ${params.paymentMethod}
+${params.referenceNumber ? `Reference: ${params.referenceNumber}\n` : ''}
+${params.reason ? `Reason: ${params.reason}\n` : ''}
+
+Your payment was not completed. Your order is safely preserved.
+You can log in to the Necessity B2B mobile app anytime and retry payment from Order Details.
+
+Necessity India Pvt. Ltd.
+    `;
+
+    try {
+      const info = await transporter.sendMail({
+        from: ENV.SMTP_FROM,
+        to: params.to,
+        subject: `Payment Unsuccessful for Order #${params.orderNumber} – Necessity India`,
+        text: textContent,
+        html: htmlContent,
+      });
+
+      logger.info(`[EmailService] Payment Unsuccessful email sent to ${params.to} for order ${params.orderNumber} (MessageId: ${info.messageId})`);
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      logger.error(`[EmailService] Failed to send Payment Unsuccessful email for order ${params.orderNumber} to ${params.to}: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 1.J: Send "Payment Refund Initiated" email
+   */
+  static async sendPaymentRefundedEmail(params: SendPaymentRefundedEmailParams): Promise<EmailSendResult> {
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      logger.info(`[EmailService] SMTP not configured. Skipped sending Payment Refund email for order ${params.orderNumber} to ${params.to}.`);
+      return {
+        success: false,
+        skipped: true,
+        error: 'SMTP provider is not configured. Email notification skipped.',
+      };
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Refund Initiated – Necessity India</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
+    .container { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background: #252525; padding: 24px 28px; text-align: left; border-bottom: 3px solid #16a34a; }
+    .header h1 { margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+    .header p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; }
+    .body-content { padding: 28px; }
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .headline { font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; }
+    .subtext { font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px; }
+    .footer { background: #f8fafc; padding: 20px 28px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #64748b; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Necessity India</h1>
+      <p>Institutional Wholesale & Facility Supplies</p>
+    </div>
+    <div class="body-content">
+      <div class="badge">Refund Processed</div>
+      <h2 class="headline">Payment Refund Initiated</h2>
+      <p class="subtext">
+        Dear <strong>${params.customerName}</strong> (${params.businessName}),<br/>
+        A refund has been successfully initiated for your wholesale order <strong>#${params.orderNumber}</strong>. The funds are being reversed directly back to your original payment method.
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #86efac;">Order Number:</td>
+          <td style="padding: 10px 14px; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #86efac;">#${params.orderNumber}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #86efac;">Refund Amount:</td>
+          <td style="padding: 10px 14px; font-size: 16px; color: #16a34a; font-weight: 800; text-align: right; border-bottom: 1px dashed #86efac;">${formatPaiseToINR(params.amountRefundedPaise)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #86efac;">Refund Reference / ID:</td>
+          <td style="padding: 8px 14px; font-size: 13px; font-family: monospace; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #86efac;">${params.refundId}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #86efac;">Payment Method:</td>
+          <td style="padding: 8px 14px; font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; border-bottom: 1px dashed #86efac;">${params.paymentMethod}</td>
+        </tr>
+        ${params.reason ? `
+        <tr>
+          <td style="padding: 8px 14px; font-size: 13px; color: #64748b; border-bottom: 1px dashed #86efac;">Cancellation Reason:</td>
+          <td style="padding: 8px 14px; font-size: 13px; color: #0f172a; font-weight: 600; text-align: right; border-bottom: 1px dashed #86efac;">${params.reason}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="padding: 10px 14px; font-size: 12px; color: #64748b;">Estimated Credit Time:</td>
+          <td style="padding: 10px 14px; font-size: 12px; color: #15803d; font-weight: 700; text-align: right;">UPI: Instant / 24-48 hrs • Cards: 5-7 business days</td>
+        </tr>
+      </table>
+
+      <p style="font-size: 13px; color: #475569; margin-top: 20px;">
+        Depending on your issuing bank or UPI provider, the refunded amount will reflect in your account within the standard banking turnaround time.
+      </p>
+    </div>
+    <div class="footer">
+      <p><strong>Necessity India Pvt. Ltd.</strong></p>
+      <p>Support: <a href="mailto:${ENV.SUPPORT_EMAIL}" style="color: #F47721; text-decoration: none;">${ENV.SUPPORT_EMAIL}</a> | Phone: ${ENV.SUPPORT_PHONE}</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const textContent = `
+Payment Refund Initiated – Necessity India
+Order: #${params.orderNumber}
+Customer: ${params.customerName} (${params.businessName})
+
+Refund Amount: ${formatPaiseToINR(params.amountRefundedPaise)}
+Refund ID: ${params.refundId}
+Payment Method: ${params.paymentMethod}
+${params.reason ? `Reason: ${params.reason}\n` : ''}
+Timeline: UPI is instant to 24-48 hrs; Cards/Netbanking take 5-7 business days depending on your bank.
+
+Necessity India Pvt. Ltd.
+    `;
+
+    try {
+      const info = await transporter.sendMail({
+        from: ENV.SMTP_FROM,
+        to: params.to,
+        subject: `Payment Refund Initiated for Order #${params.orderNumber} – Necessity India`,
+        text: textContent,
+        html: htmlContent,
+      });
+
+      logger.info(`[EmailService] Payment Refund email sent to ${params.to} for order ${params.orderNumber} (RefundId: ${params.refundId}, MessageId: ${info.messageId})`);
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      logger.error(`[EmailService] Failed to send Payment Refund email for order ${params.orderNumber} to ${params.to}: ${error.message}`);
       return {
         success: false,
         error: error.message,

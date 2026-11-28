@@ -1052,7 +1052,7 @@ export const AddProductScreen: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 mx-auto pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#F0E0D5]">
         <div className="flex items-center gap-3">
@@ -2600,7 +2600,7 @@ export const AddProductScreen: React.FC = () => {
 
       {/* QUICK INLINE MODAL: NEW CATEGORY */}
       {isNewCategoryOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[#F0E0D5] space-y-3">
             <h4 className="font-bold text-[#292929] text-sm">Add New Product Category</h4>
             <input
@@ -2645,7 +2645,7 @@ export const AddProductScreen: React.FC = () => {
 
       {/* QUICK INLINE MODAL: NEW BRAND */}
       {isNewBrandOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-[#F0E0D5] space-y-3">
             <h4 className="font-bold text-[#292929] text-sm">Add New Brand</h4>
             <input
@@ -2690,7 +2690,7 @@ export const AddProductScreen: React.FC = () => {
 
       {/* PRODUCT VARIANT CREATION & EDIT MODAL */}
       {isVariantModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-[#F0E0D5] space-y-4 max-h-[90vh] overflow-y-auto touch-scroll">
             <div className="flex items-center justify-between pb-3 border-b border-[#F0E0D5]">
               <div className="flex items-center gap-2">
@@ -2898,7 +2898,7 @@ export const AddProductScreen: React.FC = () => {
 
       {/* DELETE CONFIRMATION MODAL */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#F0E0D5] space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start gap-3">
               <div className="p-3 bg-rose-100 rounded-xl text-rose-600 flex-shrink-0">

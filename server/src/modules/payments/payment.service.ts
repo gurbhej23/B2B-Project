@@ -7,6 +7,8 @@ import { auditLogger } from '../audit/audit.service';
 import { ENV } from '../../config/env';
 import { ApiError } from '../../utils/api-error';
 import { PaymentMethod, PaymentStatus, OrderStatus, UserRole } from '@necessity/shared';
+import { orderNotificationService } from '../orders/order-notification.service';
+import { logger } from '../../config/logger';
 
 export class PaymentService {
   /**
@@ -44,7 +46,10 @@ export class PaymentService {
       }
     }
 
-    if (order.paymentStatus === PaymentStatus.SUCCESSFUL) {
+    if (
+      order.paymentStatus === PaymentStatus.SUCCESSFUL ||
+      order.paymentStatus === PaymentStatus.PAID
+    ) {
       throw ApiError.badRequest('Order has already been paid');
     }
 
@@ -178,6 +183,19 @@ export class PaymentService {
         tx.failureReason = 'Cryptographic signature mismatch';
         await tx.save();
 
+        if (tx.orderId) {
+          try {
+            await orderNotificationService.sendPaymentFailedNotification(tx.orderId.toString(), {
+              amountPaise: tx.amountPaise,
+              paymentMethod: 'Razorpay Gateway',
+              referenceNumber: providerPaymentId || providerOrderId,
+              reason: 'Payment signature verification failed or transaction interrupted',
+            });
+          } catch (notifyErr: any) {
+            logger.error(`[PaymentService] Failed to send payment failure email: ${notifyErr.message}`);
+          }
+        }
+
         throw ApiError.badRequest('Invalid payment signature verification failed');
       }
     }
@@ -191,11 +209,42 @@ export class PaymentService {
     // Reconcile Order status
     const order = await Order.findById(tx.orderId);
     if (order) {
-      order.paymentStatus = PaymentStatus.SUCCESSFUL;
-      if (order.status === OrderStatus.SUBMITTED) {
+      order.paymentStatus = PaymentStatus.PAID;
+      order.totalPaidPaise = tx.amountPaise;
+      order.remainingBalancePaise = Math.max(0, order.grandTotalPaise - tx.amountPaise);
+      if (order.status === OrderStatus.SUBMITTED || order.status === OrderStatus.PENDING) {
         order.status = OrderStatus.APPROVED;
       }
+      const alreadyLogged = order.payments?.some(
+        (p) => p.referenceNumber === providerPaymentId
+      );
+      if (!alreadyLogged) {
+        order.payments.push({
+          amountPaise: tx.amountPaise,
+          paymentMethod: PaymentMethod.PAYMENT_GATEWAY,
+          referenceNumber: providerPaymentId,
+          verifiedAt: new Date(),
+          verifiedByName: 'Razorpay Payment Gateway',
+          notes: `Instant gateway settlement (${providerOrderId})`,
+        });
+      }
       await order.save();
+
+      // Dispatch Payment Success Email Notification
+      try {
+        await orderNotificationService.sendPaymentReceivedNotification(order.id, {
+          amountPaidPaise: tx.amountPaise,
+          totalPaidPaise: order.totalPaidPaise,
+          remainingBalancePaise: order.remainingBalancePaise || 0,
+          grandTotalPaise: order.grandTotalPaise,
+          paymentMethod: 'Razorpay Gateway (Online)',
+          referenceNumber: providerPaymentId,
+          isPartial: (order.remainingBalancePaise || 0) > 0,
+          notes: `Instant settlement verified for Order #${order.orderNumber}`,
+        });
+      } catch (notifyErr: any) {
+        logger.error(`[PaymentService] Non-fatal notification failure on payment verify: ${notifyErr.message}`);
+      }
     }
 
     await auditLogger.logAction({
@@ -227,6 +276,8 @@ export class PaymentService {
       if (expectedSignature !== signature) {
         throw ApiError.forbidden('Webhook signature mismatch');
       }
+    } else if (ENV.NODE_ENV === 'production') {
+      throw ApiError.internal('Razorpay webhook secret is not configured in production');
     }
 
     const event = JSON.parse(rawBody);
@@ -251,11 +302,80 @@ export class PaymentService {
           tx.status = PaymentStatus.SUCCESSFUL;
           tx.providerPaymentId = providerPaymentId;
           tx.notes = `Captured via webhook event ${event.event}`;
+          if (eventId && !tx.idempotencyKey) {
+            tx.idempotencyKey = `webhook_${eventId}`;
+          }
           await tx.save();
 
-          await Order.findByIdAndUpdate(tx.orderId, {
-            paymentStatus: PaymentStatus.SUCCESSFUL,
-          });
+          const order = await Order.findById(tx.orderId);
+          if (order) {
+            order.paymentStatus = PaymentStatus.PAID;
+            order.totalPaidPaise = tx.amountPaise;
+            order.remainingBalancePaise = Math.max(0, order.grandTotalPaise - tx.amountPaise);
+            if (order.status === OrderStatus.SUBMITTED || order.status === OrderStatus.PENDING) {
+              order.status = OrderStatus.APPROVED;
+            }
+            const alreadyLogged = order.payments?.some(
+              (p) => p.referenceNumber === providerPaymentId
+            );
+            if (!alreadyLogged) {
+              order.payments.push({
+                amountPaise: tx.amountPaise,
+                paymentMethod: PaymentMethod.PAYMENT_GATEWAY,
+                referenceNumber: providerPaymentId,
+                verifiedAt: new Date(),
+                verifiedByName: 'Razorpay Webhook',
+                notes: `Captured via webhook event ${event.event}`,
+              });
+            }
+            await order.save();
+
+            // Dispatch Payment Success Email Notification
+            try {
+              await orderNotificationService.sendPaymentReceivedNotification(order.id, {
+                amountPaidPaise: tx.amountPaise,
+                totalPaidPaise: order.totalPaidPaise,
+                remainingBalancePaise: order.remainingBalancePaise || 0,
+                grandTotalPaise: order.grandTotalPaise,
+                paymentMethod: 'Razorpay Gateway (Online)',
+                referenceNumber: providerPaymentId || 'N/A',
+                isPartial: (order.remainingBalancePaise || 0) > 0,
+                notes: `Captured via webhook event ${event.event}`,
+              });
+            } catch (notifyErr: any) {
+              logger.error(`[PaymentService] Webhook notification failure: ${notifyErr.message}`);
+            }
+          }
+        }
+      }
+    }
+
+    if (event.event === 'payment.failed') {
+      const paymentEntity = event.payload?.payment?.entity;
+      const providerOrderId = paymentEntity?.order_id;
+      const failReason =
+        paymentEntity?.error_description ||
+        paymentEntity?.error_reason ||
+        'Payment failed at gateway';
+      if (providerOrderId) {
+        const tx = await PaymentTransaction.findOne({ providerOrderId });
+        if (tx && tx.status !== PaymentStatus.SUCCESSFUL) {
+          tx.status = PaymentStatus.FAILED;
+          tx.failureReason = failReason;
+          await tx.save();
+
+          if (tx.orderId) {
+            try {
+              await orderNotificationService.sendPaymentFailedNotification(tx.orderId.toString(), {
+                amountPaise: tx.amountPaise,
+                paymentMethod: 'Razorpay Gateway',
+                referenceNumber: paymentEntity?.id || providerOrderId,
+                reason: failReason,
+              });
+            } catch (notifyErr: any) {
+              logger.error(`[PaymentService] Webhook failure email notification failed: ${notifyErr.message}`);
+            }
+          }
         }
       }
     }
@@ -353,9 +473,36 @@ export class PaymentService {
     await tx.save();
 
     if (tx.orderId) {
-      await Order.findByIdAndUpdate(tx.orderId, {
-        paymentStatus: PaymentStatus.SUCCESSFUL,
-      });
+      const order = await Order.findById(tx.orderId);
+      if (order) {
+        order.paymentStatus = PaymentStatus.PAID;
+        order.totalPaidPaise = (order.totalPaidPaise || 0) + tx.amountPaise;
+        order.remainingBalancePaise = Math.max(0, order.grandTotalPaise - order.totalPaidPaise);
+        order.payments.push({
+          amountPaise: tx.amountPaise,
+          paymentMethod: tx.paymentMethod,
+          referenceNumber: tx.bankReferenceUtr || tx.providerPaymentId || 'N/A',
+          verifiedAt: new Date(),
+          verifiedByName: currentUser.name || currentUser.email,
+          notes: notes || 'Verified by accounts department',
+        });
+        await order.save();
+
+        try {
+          await orderNotificationService.sendPaymentReceivedNotification(order.id, {
+            amountPaidPaise: tx.amountPaise,
+            totalPaidPaise: order.totalPaidPaise,
+            remainingBalancePaise: order.remainingBalancePaise || 0,
+            grandTotalPaise: order.grandTotalPaise,
+            paymentMethod: tx.paymentMethod?.replace(/_/g, ' ') || 'Bank Transfer',
+            referenceNumber: tx.bankReferenceUtr || 'N/A',
+            isPartial: (order.remainingBalancePaise || 0) > 0,
+            notes,
+          });
+        } catch (notifyErr: any) {
+          logger.error(`[PaymentService] Failed to send bank transfer payment verified email: ${notifyErr.message}`);
+        }
+      }
     }
 
     await auditLogger.logAction({
@@ -396,9 +543,23 @@ export class PaymentService {
     await tx.save();
 
     if (tx.orderId) {
-      await Order.findByIdAndUpdate(tx.orderId, {
-        paymentStatus: PaymentStatus.FAILED,
-      });
+      const order = await Order.findByIdAndUpdate(
+        tx.orderId,
+        { paymentStatus: PaymentStatus.FAILED },
+        { new: true }
+      );
+      if (order) {
+        try {
+          await orderNotificationService.sendPaymentFailedNotification(order.id, {
+            amountPaise: tx.amountPaise,
+            paymentMethod: tx.paymentMethod?.replace(/_/g, ' ') || 'Bank Transfer',
+            referenceNumber: tx.bankReferenceUtr,
+            reason: reason || 'Rejected by finance administrator',
+          });
+        } catch (notifyErr: any) {
+          logger.error(`[PaymentService] Failed to send payment rejection email: ${notifyErr.message}`);
+        }
+      }
     }
 
     await auditLogger.logAction({
@@ -414,6 +575,144 @@ export class PaymentService {
     });
 
     return tx;
+  }
+
+  /**
+   * Issues a full or partial refund for a paid order via Razorpay API or marks offline refund.
+   */
+  async refundPayment(
+    identifier: string,
+    currentUser: any,
+    reason?: string
+  ): Promise<{ success: boolean; refundId?: string; transaction: IPaymentTransactionDocument }> {
+    if (!mongoose.Types.ObjectId.isValid(identifier)) {
+      throw ApiError.badRequest('Invalid ID specified for refund');
+    }
+
+    let order: any = null;
+    let tx: any = null;
+
+    // Check if identifier is an Order ID
+    order = await Order.findById(identifier);
+    if (order) {
+      tx = await PaymentTransaction.findOne({
+        orderId: order._id,
+        status: PaymentStatus.SUCCESSFUL,
+      }).sort({ createdAt: -1 });
+    } else {
+      // Check if identifier is a PaymentTransaction ID
+      tx = await PaymentTransaction.findById(identifier);
+      if (tx && tx.orderId) {
+        order = await Order.findById(tx.orderId);
+      }
+    }
+
+    if (!tx) {
+      throw ApiError.badRequest('No successful payment transaction found to refund');
+    }
+
+    if (!order) {
+      throw ApiError.notFound('Associated order not found for this refund transaction');
+    }
+
+    let refundId: string | undefined;
+
+    // Call Razorpay Refunds API if live gateway transaction
+    const isMock = ENV.PAYMENT_PROVIDER === 'mock_gateway' || !ENV.RAZORPAY_KEY_ID || !ENV.RAZORPAY_KEY_SECRET;
+    if (
+      !isMock &&
+      tx.provider === 'razorpay' &&
+      tx.providerPaymentId &&
+      !tx.providerPaymentId.startsWith('pay_mock_') &&
+      !tx.providerPaymentId.startsWith('pay_sim_')
+    ) {
+      try {
+        const authHeader = Buffer.from(
+          `${ENV.RAZORPAY_KEY_ID}:${ENV.RAZORPAY_KEY_SECRET}`
+        ).toString('base64');
+
+        const response = await fetch(
+          `https://api.razorpay.com/v1/payments/${tx.providerPaymentId}/refund`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Basic ${authHeader}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              amount: tx.amountPaise,
+              notes: {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                reason: reason || 'Order cancelled by administration',
+              },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Razorpay refund API error (${response.status}): ${errText}`);
+        }
+
+        const data = (await response.json()) as any;
+        refundId = data.id;
+      } catch (err: any) {
+        logger.error(`[PaymentService] Razorpay refund error: ${err.message}`);
+        throw ApiError.badRequest(`Payment gateway refund failure: ${err.message}`);
+      }
+    } else {
+      // In development, mock, or offline mode
+      refundId = `rfnd_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    }
+
+    // Update Transaction
+    tx.status = PaymentStatus.REFUNDED;
+    tx.refundId = refundId;
+    tx.refundReason = reason || 'Order cancelled';
+    tx.notes = `${tx.notes || ''} • Refunded via ${refundId}`.trim();
+    await tx.save();
+
+    // Update Order
+    order.paymentStatus = PaymentStatus.REFUNDED;
+    order.totalPaidPaise = 0;
+    order.remainingBalancePaise = order.grandTotalPaise;
+    await order.save();
+
+    // Log Audit
+    await auditLogger.logAction({
+      actorId: (currentUser.id || currentUser._id).toString(),
+      action: 'PAYMENT_REFUNDED',
+      targetResource: 'PaymentTransaction',
+      targetId: tx.id,
+      details: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        amountPaise: tx.amountPaise,
+        refundId,
+        reason,
+        refundedBy: currentUser.name || currentUser.email,
+      },
+    });
+
+    // Send Customer Email Notification
+    try {
+      await orderNotificationService.sendPaymentRefundedNotification(order.id, {
+        amountRefundedPaise: tx.amountPaise,
+        paymentMethod:
+          tx.paymentMethod === PaymentMethod.PAYMENT_GATEWAY
+            ? 'Razorpay Gateway'
+            : tx.paymentMethod?.replace(/_/g, ' ') || 'Online Payment',
+        refundId: refundId || 'N/A',
+        reason: reason || order.cancellationReason || 'Order cancellation settlement',
+      });
+    } catch (notifyErr: any) {
+      logger.error(
+        `[PaymentService] Failed to send payment refund email notification: ${notifyErr.message}`
+      );
+    }
+
+    return { success: true, refundId, transaction: tx };
   }
 }
 

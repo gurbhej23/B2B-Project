@@ -15,16 +15,20 @@ import { formatPaiseToINR, OrderStatus } from '@necessity/shared';
 import { Order } from '../../types/models';
 import { colors } from '../../theme/colors';
 import { Icon } from '../../components/common/Icon';
+import { useAuth } from '../../context/AuthContext';
+import RazorpayCheckout from 'react-native-razorpay';
 
 export const OrderDetailsScreen: React.FC = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const { user, retailer } = useAuth();
   const orderId = route.params?.orderId;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [invoice, setInvoice] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isPayingOnline, setIsPayingOnline] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInvoice = useCallback(async () => {
@@ -109,6 +113,63 @@ export const OrderDetailsScreen: React.FC = () => {
         return { bg: '#FFFBEB', text: '#B45309', border: '#FDE68A', label: 'PARTIALLY PAID' };
       default:
         return { bg: '#FEF2F2', text: '#B91C1C', border: '#FECACA', label: 'UNPAID' };
+    }
+  };
+
+  const handleOnlinePayment = async () => {
+    if (!order) return;
+    setIsPayingOnline(true);
+    try {
+      const intentRes = await mobileApi.post('/payments/intent', {
+        orderId: order.id || (order as any)._id,
+      });
+
+      if (!intentRes.success || !intentRes.data) {
+        throw new Error(intentRes.message || 'Failed to initialize payment gateway');
+      }
+
+      const { keyId, providerOrderId, amountPaise } = intentRes.data;
+
+      const cleanContact = (user?.phone || '').replace(/\D/g, '').slice(-10);
+
+      const options = {
+        description: `Necessity Order #${order.orderNumber} Settlement`,
+        currency: 'INR',
+        key: keyId,
+        amount: amountPaise,
+        name: 'Necessity India',
+        order_id: providerOrderId,
+        prefill: {
+          email: user?.email || (retailer as any)?.email || '',
+          contact: cleanContact,
+          name: user?.name || retailer?.businessName || order.retailerName || '',
+        },
+        theme: { color: colors.primary },
+      };
+
+      const paymentData = await RazorpayCheckout.open(options);
+
+      const verifyRes = await mobileApi.post('/payments/verify', {
+        providerOrderId: paymentData.razorpay_order_id,
+        providerPaymentId: paymentData.razorpay_payment_id,
+        signature: paymentData.razorpay_signature,
+      });
+
+      if (verifyRes.success) {
+        Alert.alert('Payment Successful', 'Your payment has been verified and settled successfully.');
+        await fetchOrder();
+      } else {
+        throw new Error(verifyRes.message || 'Signature verification failed');
+      }
+    } catch (err: any) {
+      if (err?.code !== 2) {
+        Alert.alert(
+          'Payment Incomplete',
+          err?.description || extractErrorMessage(err) || 'Payment was cancelled or could not be completed.'
+        );
+      }
+    } finally {
+      setIsPayingOnline(false);
     }
   };
 
@@ -306,11 +367,11 @@ export const OrderDetailsScreen: React.FC = () => {
           <View style={styles.balancesGrid}>
             <View style={styles.balanceBox}>
               <Text style={styles.balanceBoxLabel}>Order Total</Text>
-              <Text style={styles.balanceBoxValue}>{formatPaiseToINR(order.grandTotalPaise)}</Text>
+              <Text style={styles.balanceBoxValue} numberOfLines={1} adjustsFontSizeToFit>{formatPaiseToINR(order.grandTotalPaise)}</Text>
             </View>
             <View style={[styles.balanceBox, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
               <Text style={[styles.balanceBoxLabel, { color: '#047857' }]}>Amount Paid</Text>
-              <Text style={[styles.balanceBoxValue, { color: '#047857' }]}>
+              <Text style={[styles.balanceBoxValue, { color: '#047857' }]} numberOfLines={1} adjustsFontSizeToFit>
                 {formatPaiseToINR(totalPaid)}
               </Text>
             </View>
@@ -335,6 +396,8 @@ export const OrderDetailsScreen: React.FC = () => {
                   styles.balanceBoxValue,
                   remainingDue > 0 ? { color: '#B91C1C' } : { color: '#047857' },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {formatPaiseToINR(remainingDue)}
               </Text>
@@ -353,6 +416,26 @@ export const OrderDetailsScreen: React.FC = () => {
               </Text>
             </View>
           </View>
+
+          {remainingDue > 0 && !isCancelledOrRejected && (
+            <TouchableOpacity
+              style={styles.payNowBtn}
+              onPress={handleOnlinePayment}
+              disabled={isPayingOnline}
+              activeOpacity={0.85}
+            >
+              {isPayingOnline ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <View style={styles.payNowRow}>
+                  <Icon name="check" size={14} color={colors.white} strokeWidth={2.5} />
+                  <Text style={styles.payNowBtnText}>
+                    Pay Balance via Razorpay ({formatPaiseToINR(remainingDue)})
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Payment History Transactions Ledger */}
@@ -1051,5 +1134,29 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 12,
     fontWeight: '800',
+  },
+  payNowBtn: {
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  payNowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  payNowBtnText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '800',
+    marginLeft: 6,
   },
 });

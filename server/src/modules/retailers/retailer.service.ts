@@ -5,6 +5,7 @@ import { Order } from '../orders/order.model';
 import { AuditService } from '../audit/audit.service';
 import { EmailService, EmailSendResult } from '../email/email.service';
 import { AppError } from '../../utils/errors';
+import { escapeRegex } from '../../utils/security';
 import { AccountStatus, CreditStatus, CustomerType, UserRole } from '@necessity/shared';
 
 export interface RetailerApprovalInput {
@@ -123,7 +124,7 @@ export class RetailerService {
     }
 
     if (query.search && query.search.trim()) {
-      const searchRegex = new RegExp(query.search.trim(), 'i');
+      const searchRegex = new RegExp(escapeRegex(query.search.trim()), 'i');
       andConditions.push({
         $or: [
           { businessName: searchRegex },
@@ -584,6 +585,106 @@ export class RetailerService {
       email: updatedRetailer.email,
       emailNotification: emailResult,
     };
+  }
+
+  /**
+   * Update Customer Profile Details (Admin only)
+   */
+  static async updateCustomerDetails(
+    retailerId: string,
+    data: {
+      businessName?: string;
+      tradeName?: string;
+      contactPerson?: string;
+      phone?: string;
+      email?: string;
+      gstin?: string;
+      pan?: string;
+      billingAddress?: any;
+      isActive?: boolean;
+    },
+    actorId: string,
+    ip?: string,
+    userAgent?: string
+  ) {
+    const retailer = await Retailer.findById(retailerId);
+    if (!retailer) {
+      throw AppError.notFound('Customer not found');
+    }
+
+    // Check phone uniqueness if modified
+    if (data.phone && data.phone !== retailer.phone) {
+      const cleanPhone = data.phone.trim();
+      const existingPhone = await Retailer.findOne({ phone: cleanPhone, _id: { $ne: retailer._id } });
+      const existingUserPhone = await User.findOne({ phone: cleanPhone, _id: { $ne: retailer.userId } });
+      if (existingPhone || existingUserPhone) {
+        throw AppError.conflict('Another customer is already registered with this phone number');
+      }
+      retailer.phone = cleanPhone;
+    }
+
+    // Check email uniqueness if modified
+    if (data.email !== undefined) {
+      const cleanEmail = data.email?.trim()?.toLowerCase() || undefined;
+      if (cleanEmail && cleanEmail !== retailer.email?.toLowerCase()) {
+        const existingEmail = await Retailer.findOne({ email: cleanEmail, _id: { $ne: retailer._id } });
+        const existingUserEmail = await User.findOne({ email: cleanEmail, _id: { $ne: retailer.userId } });
+        if (existingEmail || existingUserEmail) {
+          throw AppError.conflict('Another customer is already registered with this email address');
+        }
+      }
+      retailer.email = cleanEmail;
+    }
+
+    if (data.businessName !== undefined) retailer.businessName = data.businessName.trim();
+    if (data.tradeName !== undefined) retailer.tradeName = data.tradeName.trim() || undefined;
+    if (data.contactPerson !== undefined) retailer.contactPerson = data.contactPerson.trim();
+    if (data.gstin !== undefined) retailer.gstin = data.gstin.trim()?.toUpperCase() || undefined;
+    if (data.pan !== undefined) retailer.pan = data.pan.trim()?.toUpperCase() || undefined;
+    if (data.billingAddress !== undefined) {
+      retailer.billingAddress = {
+        street: data.billingAddress.street?.trim() || retailer.billingAddress?.street || '',
+        city: data.billingAddress.city?.trim() || retailer.billingAddress?.city || '',
+        state: data.billingAddress.state?.trim() || retailer.billingAddress?.state || '',
+        pincode: data.billingAddress.pincode?.trim() || retailer.billingAddress?.pincode || '',
+        stateCode: data.billingAddress.stateCode?.trim() || retailer.billingAddress?.stateCode || '27',
+      };
+    }
+    if (data.isActive !== undefined) {
+      retailer.isActive = data.isActive;
+    }
+
+    await retailer.save();
+
+    // Also keep linked User in sync
+    if (retailer.userId) {
+      const user = await User.findById(retailer.userId);
+      if (user) {
+        if (data.contactPerson !== undefined) user.name = data.contactPerson.trim();
+        if (data.phone !== undefined) user.phone = data.phone.trim();
+        if (data.email !== undefined) user.email = data.email?.trim()?.toLowerCase() || undefined;
+        await user.save();
+      }
+    }
+
+    await AuditService.log({
+      actorId,
+      action: 'CUSTOMER_DETAILS_UPDATED',
+      targetResource: 'retailers',
+      targetId: retailerId,
+      details: {
+        updatedFields: Object.keys(data),
+        businessName: retailer.businessName,
+        contactPerson: retailer.contactPerson,
+        phone: retailer.phone,
+        email: retailer.email,
+        gstin: retailer.gstin,
+      },
+      ipAddress: ip,
+      userAgent,
+    });
+
+    return retailer;
   }
 
   /**

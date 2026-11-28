@@ -20,6 +20,8 @@ export interface IPaymentTransactionDocument extends Document {
   verifiedAt?: Date;
   notes?: string;
   failureReason?: string;
+  refundId?: string;
+  refundReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -110,6 +112,14 @@ const PaymentTransactionSchema = new Schema<IPaymentTransactionDocument>(
       type: String,
     },
     failureReason: {
+      type: String,
+    },
+    refundId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    refundReason: {
       type: String,
     },
   },

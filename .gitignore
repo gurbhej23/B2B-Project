@@ -41,6 +41,8 @@ backups/
 *.lnk
 
 # Logs and runtime artifacts
+uploads/
+server/uploads/
 logs/
 *.log
 npm-debug.log*

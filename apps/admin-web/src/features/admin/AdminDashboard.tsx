@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Eye,
   UserCheck,
+  UserRoundCheck,
 } from 'lucide-react';
 import { formatPaiseToINR } from '@necessity/shared';
 
@@ -255,9 +256,10 @@ export const AdminDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Header Banner */}
       <div className="text-[#292929]">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-3xl">
-            <h1 className="text-2xl sm:text-2xl font-bold tracking-tight text-[#292929]">
+            <h1 className="text-2xl sm:text-2xl font-bold tracking-tight text-[#292929] flex items-center gap-3">
+              <UserRoundCheck className="h-6 w-6 text-[#F47732]" />
               Welcome back, Admin
             </h1>
             <span className="text-sm text-[#292929]">
@@ -284,7 +286,7 @@ export const AdminDashboard: React.FC = () => {
 
       {/* SECTION 1: Four Primary Executive KPI Boxes */}
       <div className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Box 1: Total users */}
           <Link
             to="/admin/customers"

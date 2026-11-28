@@ -187,6 +187,23 @@ export class RetailerController {
     }
   }
 
+  static async updateCustomerDetails(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const retailerId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);
+      const actorId = (req.user as any)?._id?.toString() || (req.user as any)?.id?.toString() || '';
+      const result = await RetailerService.updateCustomerDetails(
+        retailerId,
+        req.body,
+        actorId,
+        req.ip,
+        req.get('user-agent')
+      );
+      sendSuccess(res, result, 'Customer details updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updateMyAddresses(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const user = req.user as any;

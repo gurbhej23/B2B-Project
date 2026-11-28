@@ -483,6 +483,145 @@ export class OrderNotificationService {
 
     return notificationRecord;
   }
+
+  /**
+   * Dispatches Payment Failed / Unsuccessful notification email
+   */
+  public async sendPaymentFailedNotification(
+    orderId: string,
+    failureDetails: {
+      amountPaise: number;
+      paymentMethod: string;
+      referenceNumber?: string;
+      reason?: string;
+    }
+  ): Promise<IOrderNotification | null> {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      logger.warn(`[OrderNotification] Order ${orderId} not found for payment failure notification`);
+      return null;
+    }
+
+    const { email, name, businessName } = await this.resolveCustomerRecipient(order);
+    const subject = `Payment Unsuccessful for Order #${order.orderNumber} – Necessity India`;
+
+    if (!email || !email.includes('@')) {
+      logger.warn(`[OrderNotification] Order ${order.orderNumber} payment failure skipped: no valid registered customer email.`);
+      return null;
+    }
+
+    let sendResult;
+    try {
+      sendResult = await EmailService.sendPaymentFailedEmail({
+        to: email,
+        customerName: name,
+        businessName,
+        orderNumber: order.orderNumber,
+        orderDate: order.createdAt || new Date(),
+        amountPaise: failureDetails.amountPaise,
+        paymentMethod: failureDetails.paymentMethod,
+        referenceNumber: failureDetails.referenceNumber,
+        reason: failureDetails.reason,
+      });
+    } catch (err: any) {
+      sendResult = {
+        success: false,
+        error: err.message || 'Unexpected payment failure email delivery error',
+      };
+    }
+
+    const notificationRecord: IOrderNotification = {
+      status: 'PAYMENT_FAILED' as any,
+      recipientEmail: email,
+      recipientName: name,
+      subject,
+      success: sendResult.success,
+      sentAt: sendResult.success ? new Date() : undefined,
+      attemptedAt: new Date(),
+      messageId: sendResult.messageId,
+      error: sendResult.error,
+      retryCount: 0,
+    };
+
+    try {
+      order.notifications = order.notifications || [];
+      order.notifications.push(notificationRecord);
+      await order.save();
+    } catch (saveErr: any) {
+      logger.warn(`[OrderNotification] Could not persist payment failure notification record on order ${order.orderNumber}: ${saveErr.message}`);
+    }
+
+    return notificationRecord;
+  }
+
+  /**
+   * Dispatches Payment Refunded notification email
+   */
+  public async sendPaymentRefundedNotification(
+    orderId: string,
+    refundDetails: {
+      amountRefundedPaise: number;
+      paymentMethod: string;
+      refundId: string;
+      reason?: string;
+    }
+  ): Promise<IOrderNotification | null> {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      logger.warn(`[OrderNotification] Order ${orderId} not found for payment refund notification`);
+      return null;
+    }
+
+    const { email, name, businessName } = await this.resolveCustomerRecipient(order);
+    const subject = `Payment Refund Initiated for Order #${order.orderNumber} – Necessity India`;
+
+    if (!email || !email.includes('@')) {
+      logger.warn(`[OrderNotification] Order ${order.orderNumber} payment refund skipped: no valid registered customer email.`);
+      return null;
+    }
+
+    let sendResult;
+    try {
+      sendResult = await EmailService.sendPaymentRefundedEmail({
+        to: email,
+        customerName: name,
+        businessName,
+        orderNumber: order.orderNumber,
+        amountRefundedPaise: refundDetails.amountRefundedPaise,
+        paymentMethod: refundDetails.paymentMethod,
+        refundId: refundDetails.refundId,
+        reason: refundDetails.reason,
+      });
+    } catch (err: any) {
+      sendResult = {
+        success: false,
+        error: err.message || 'Unexpected payment refund email delivery error',
+      };
+    }
+
+    const notificationRecord: IOrderNotification = {
+      status: 'PAYMENT_REFUNDED' as any,
+      recipientEmail: email,
+      recipientName: name,
+      subject,
+      success: sendResult.success,
+      sentAt: sendResult.success ? new Date() : undefined,
+      attemptedAt: new Date(),
+      messageId: sendResult.messageId,
+      error: sendResult.error,
+      retryCount: 0,
+    };
+
+    try {
+      order.notifications = order.notifications || [];
+      order.notifications.push(notificationRecord);
+      await order.save();
+    } catch (saveErr: any) {
+      logger.warn(`[OrderNotification] Could not persist refund notification record on order ${order.orderNumber}: ${saveErr.message}`);
+    }
+
+    return notificationRecord;
+  }
 }
 
 export const orderNotificationService = new OrderNotificationService();

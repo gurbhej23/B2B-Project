@@ -190,10 +190,10 @@ export const ImportProductsScreen: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 mx-auto pb-12">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-[#F0E0D5]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <Link
             to="/admin/products"
             className="p-2 rounded-lg border border-[#F0E0D5] bg-white text-[#292929] hover:bg-[#FFF8F3] hover:text-[#F47732] transition-colors"
@@ -201,13 +201,12 @@ export const ImportProductsScreen: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-[#292929] flex items-center gap-2">
-              <Upload className="h-5 w-5 text-[#F47732]" />
+            <h1 className="text-sm lg:text-xl font-bold text-[#292929] flex items-center gap-2">
               Bulk Import Wholesale Products (CSV / Excel)
             </h1>
-            <p className="text-xs text-[#737373] mt-0.5">
+            {/* <p className="text-xs text-[#737373] mt-0.5">
               Upload multiple product catalogues, wholesale rates, and opening inventory balances using CSV spreadsheets.
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -426,8 +425,8 @@ export const ImportProductsScreen: React.FC = () => {
 
             <div
               className={`p-3.5 rounded-xl border ${importSummary.failed > 0
-                  ? 'bg-rose-50 border-rose-200 text-rose-900'
-                  : 'bg-white border-[#F0E0D5] text-[#737373]'
+                ? 'bg-rose-50 border-rose-200 text-rose-900'
+                : 'bg-white border-[#F0E0D5] text-[#737373]'
                 }`}
             >
               <span className="text-[11px] font-bold uppercase block">Failed Rows</span>

@@ -41,7 +41,9 @@ export class PaymentController {
   static async webhook(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const signature = req.headers['x-razorpay-signature'] as string;
-      const rawBody = JSON.stringify(req.body);
+      const rawBody = (req as any).rawBody
+        ? (req as any).rawBody.toString('utf8')
+        : JSON.stringify(req.body);
       const result = await paymentService.handleWebhook(rawBody, signature);
       sendSuccess(res, result);
     } catch (err) {
@@ -75,6 +77,17 @@ export class PaymentController {
       const { reason } = req.body;
       const result = await paymentService.rejectPayment(id, req.user, reason);
       sendSuccess(res, result, 'Payment rejected');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async refund(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const result = await paymentService.refundPayment(id, req.user, reason);
+      sendSuccess(res, result, 'Payment refunded successfully');
     } catch (err) {
       next(err);
     }

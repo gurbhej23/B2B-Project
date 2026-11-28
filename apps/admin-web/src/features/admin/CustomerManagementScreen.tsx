@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
+import { useAuth } from '../../lib/auth-context';
 import { Modal } from '../../components/Modal';
 import { CustomSelect } from '../../components/ui';
 import {
@@ -27,12 +28,20 @@ import {
   AccountStatus,
   CustomerType,
   CreditStatus,
+  UserRole,
   formatPaiseToINR,
   inrToPaise,
   extractErrorMessage,
 } from '@necessity/shared';
 
 export const CustomerManagementScreen: React.FC = () => {
+  const { user } = useAuth();
+  const isAdmin =
+    user?.role === UserRole.SUPER_ADMIN ||
+    user?.role === UserRole.ADMIN ||
+    (user?.role as any) === 'super_admin' ||
+    (user?.role as any) === 'admin';
+
   const [customers, setCustomers] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -67,8 +76,6 @@ export const CustomerManagementScreen: React.FC = () => {
   const [approvalCustomerType, setApprovalCustomerType] = useState<CustomerType>(CustomerType.RETAILER);
   const [approvalPricingGroupId, setApprovalPricingGroupId] = useState('');
   const [approvalDiscountGroupId, setApprovalDiscountGroupId] = useState('');
-  const [creditLimitRupees, setCreditLimitRupees] = useState('200000');
-  const [paymentTermsDays, setPaymentTermsDays] = useState('30');
   const [rejectionReason, setRejectionReason] = useState('');
   const [statusChangeReason, setStatusChangeReason] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
@@ -78,13 +85,18 @@ export const CustomerManagementScreen: React.FC = () => {
     null
   );
 
-  // Edit modal form states
-  const [editCustomerType, setEditCustomerType] = useState<CustomerType>(CustomerType.RETAILER);
-  const [editPricingGroupId, setEditPricingGroupId] = useState('');
-  const [editDiscountGroupId, setEditDiscountGroupId] = useState('');
-  const [editCreditLimitRupees, setEditCreditLimitRupees] = useState('200000');
-  const [editPaymentTermsDays, setEditPaymentTermsDays] = useState('30');
-  const [editCreditStatus, setEditCreditStatus] = useState<CreditStatus>(CreditStatus.NORMAL);
+  // Edit modal form states (Customer details only)
+  const [editBusinessName, setEditBusinessName] = useState('');
+  const [editTradeName, setEditTradeName] = useState('');
+  const [editContactPerson, setEditContactPerson] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editGstin, setEditGstin] = useState('');
+  const [editPan, setEditPan] = useState('');
+  const [editStreet, setEditStreet] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editState, setEditState] = useState('');
+  const [editPincode, setEditPincode] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
 
   const fetchCustomers = async (
@@ -183,16 +195,21 @@ export const CustomerManagementScreen: React.FC = () => {
     }
   };
 
-  // Open Edit Modal
+  // Open Edit Modal (Customer details only)
   const openEdit = (cust: any) => {
     setSelectedCustomer(cust);
-    setEditCustomerType(mapCustomerType(cust.customerType));
-    setEditCreditLimitRupees(String((cust.creditLimitPaise || 0) / 100));
-    setEditPaymentTermsDays(String(cust.paymentTermsDays || 30));
-    setEditCreditStatus(cust.creditStatus || CreditStatus.NORMAL);
+    setEditBusinessName(cust.businessName || '');
+    setEditTradeName(cust.tradeName || '');
+    setEditContactPerson(cust.contactPerson || '');
+    setEditPhone(cust.phone || '');
+    setEditEmail(cust.email || '');
+    setEditGstin(cust.gstin || '');
+    setEditPan(cust.pan || '');
+    setEditStreet(cust.billingAddress?.street || '');
+    setEditCity(cust.billingAddress?.city || '');
+    setEditState(cust.billingAddress?.state || '');
+    setEditPincode(cust.billingAddress?.pincode || '');
     setEditIsActive(cust.isActive ?? true);
-    setEditPricingGroupId(cust.pricingGroupId?._id || cust.pricingGroupId || '');
-    setEditDiscountGroupId(cust.discountGroupId?._id || cust.discountGroupId || '');
     setActionNotice(null);
     setIsEditOpen(true);
   };
@@ -265,8 +282,6 @@ export const CustomerManagementScreen: React.FC = () => {
     setApprovalCustomerType(mapCustomerType(cust.requestedCustomerType || cust.customerType));
     setApprovalPricingGroupId(cust.pricingGroupId?._id || cust.pricingGroupId || '');
     setApprovalDiscountGroupId(cust.discountGroupId?._id || cust.discountGroupId || '');
-    setCreditLimitRupees('200000');
-    setPaymentTermsDays('30');
     setIsApproveOpen(true);
     setActionNotice(null);
   };
@@ -339,15 +354,12 @@ export const CustomerManagementScreen: React.FC = () => {
     setActionNotice(null);
 
     try {
-      const creditPaise = inrToPaise(parseFloat(creditLimitRupees) || 0);
-      const terms = parseInt(paymentTermsDays, 10) || 15;
-
       const res = await api.patch(`/customers/${selectedCustomer.id || selectedCustomer.retailerId}/approve`, {
         customerType: approvalCustomerType,
         pricingGroupId: approvalPricingGroupId || undefined,
         discountGroupId: approvalDiscountGroupId || undefined,
-        creditLimitPaise: creditPaise,
-        paymentTermsDays: terms,
+        creditLimitPaise: 0,
+        paymentTermsDays: 0,
         creditStatus: CreditStatus.NORMAL,
       });
 
@@ -522,45 +534,54 @@ export const CustomerManagementScreen: React.FC = () => {
     }
   };
 
-  // Save Customer Edits (Classification, Credit, Terms, Status)
+  // Save Customer Edits (Customer Profile Details)
   const handleSaveEdit = async () => {
     if (!selectedCustomer) return;
+    if (!isAdmin) {
+      setActionNotice({ type: 'error', message: 'Only administrators are authorized to update customer details.' });
+      return;
+    }
+    if (!editBusinessName.trim()) {
+      setActionNotice({ type: 'error', message: 'Business name is required' });
+      return;
+    }
+    if (!editContactPerson.trim()) {
+      setActionNotice({ type: 'error', message: 'Contact person name is required' });
+      return;
+    }
+    if (!editPhone.trim() || editPhone.trim().length < 10) {
+      setActionNotice({ type: 'error', message: 'Valid 10-digit mobile phone number is required' });
+      return;
+    }
+
     setIsSubmitting(true);
     setActionNotice(null);
 
     const targetId = String(selectedCustomer.id || selectedCustomer._id);
     try {
-      const creditPaise = inrToPaise(parseFloat(editCreditLimitRupees) || 0);
-      const terms = parseInt(editPaymentTermsDays, 10) || 15;
+      const payload: any = {
+        businessName: editBusinessName.trim(),
+        tradeName: editTradeName.trim() || undefined,
+        contactPerson: editContactPerson.trim(),
+        phone: editPhone.trim(),
+        email: editEmail.trim() || undefined,
+        gstin: editGstin.trim().toUpperCase() || undefined,
+        pan: editPan.trim().toUpperCase() || undefined,
+        isActive: editIsActive,
+      };
 
-      const targetStatus =
-        selectedCustomer.accountStatus === AccountStatus.REJECTED ||
-          selectedCustomer.accountStatus === AccountStatus.SUSPENDED
-          ? selectedCustomer.accountStatus
-          : AccountStatus.ACTIVE;
-
-      // 1. Update credit & classification settings
-      const assignedPg = pricingGroups.find((g) => g.id === editPricingGroupId || g._id === editPricingGroupId);
-      const assignedDg = discountGroups.find((g) => g.id === editDiscountGroupId || g._id === editDiscountGroupId);
-
-      await api.patch(`/customers/${targetId}/approval`, {
-        status: targetStatus,
-        customerType: editCustomerType,
-        pricingGroupId: editPricingGroupId || null,
-        discountGroupId: editDiscountGroupId || null,
-        creditLimitPaise: creditPaise,
-        paymentTermsDays: terms,
-        creditStatus: editCreditStatus,
-      });
-
-      // 2. If access status was changed in the edit dialog
-      const currentActive = selectedCustomer.isActive ?? true;
-      if (editIsActive !== currentActive) {
-        await api.patch(`/customers/${targetId}/status`, {
-          isActive: editIsActive,
-          reason: 'Updated in customer edit dialog',
-        });
+      if (editStreet.trim() || editCity.trim() || editState.trim() || editPincode.trim()) {
+        payload.billingAddress = {
+          street: editStreet.trim(),
+          city: editCity.trim(),
+          state: editState.trim() || 'Maharashtra',
+          pincode: editPincode.trim(),
+          stateCode: selectedCustomer.billingAddress?.stateCode || '27',
+        };
       }
+
+      const res = await api.patch(`/customers/${targetId}`, payload);
+      const updatedData = res.data?.data || payload;
 
       // Update in local state
       setCustomers((prev) =>
@@ -569,22 +590,43 @@ export const CustomerManagementScreen: React.FC = () => {
           if (cId === targetId) {
             return {
               ...c,
-              customerType: editCustomerType,
-              pricingGroupId: assignedPg || (editPricingGroupId ? { _id: editPricingGroupId, name: 'Assigned' } : null),
-              discountGroupId: assignedDg || (editDiscountGroupId ? { _id: editDiscountGroupId, name: 'Assigned' } : null),
-              creditLimitPaise: creditPaise,
-              paymentTermsDays: terms,
-              creditStatus: editCreditStatus,
+              ...updatedData,
+              businessName: editBusinessName.trim(),
+              tradeName: editTradeName.trim() || undefined,
+              contactPerson: editContactPerson.trim(),
+              phone: editPhone.trim(),
+              email: editEmail.trim() || undefined,
+              gstin: editGstin.trim().toUpperCase() || undefined,
+              pan: editPan.trim().toUpperCase() || undefined,
               isActive: editIsActive,
+              billingAddress: payload.billingAddress || c.billingAddress,
             };
           }
           return c;
         })
       );
 
+      setSelectedCustomer((prev: any) =>
+        prev
+          ? {
+            ...prev,
+            ...updatedData,
+            businessName: editBusinessName.trim(),
+            tradeName: editTradeName.trim() || undefined,
+            contactPerson: editContactPerson.trim(),
+            phone: editPhone.trim(),
+            email: editEmail.trim() || undefined,
+            gstin: editGstin.trim().toUpperCase() || undefined,
+            pan: editPan.trim().toUpperCase() || undefined,
+            isActive: editIsActive,
+            billingAddress: payload.billingAddress || prev.billingAddress,
+          }
+          : prev
+      );
+
       setActionNotice({
         type: 'success',
-        message: `Customer "${selectedCustomer.businessName}" updated successfully.`,
+        message: `Customer "${editBusinessName.trim()}" details updated successfully.`,
       });
 
       setTimeout(() => {
@@ -594,7 +636,7 @@ export const CustomerManagementScreen: React.FC = () => {
     } catch (err: any) {
       setActionNotice({
         type: 'error',
-        message: err.response?.data?.error?.message || 'Failed to update customer',
+        message: extractErrorMessage(err) || 'Failed to update customer details',
       });
     } finally {
       setIsSubmitting(false);
@@ -603,11 +645,28 @@ export const CustomerManagementScreen: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Title */}
-      <h1 className="text-2xl font-bold text-[#292929] tracking-tight flex items-center gap-2">
-        <Users className="h-6 w-6 text-[#F47732]" />
-        Customer Management
-      </h1>
+      {/* Page Title (Desktop only, mobile shows in Navbar) */}
+      <div className="hidden lg:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#F0E0D5]">
+        <div>
+          <h1 className="text-2xl font-bold text-[#292929] tracking-tight flex items-center gap-2">
+            <Users className="h-6 w-6 text-[#F47732]" />
+            Customer Management
+          </h1>
+          <p className="text-xs sm:text-sm text-[#737373] mt-1">
+            Manage customer profiles, approvals, and account activities from one place.
+          </p>
+        </div>
+        {/* Refresh Button (Desktop) */}
+        <button
+          type="button"
+          onClick={() => fetchCustomers(debouncedSearch, statusFilter, page)}
+          disabled={isLoading}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] rounded-lg shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#F47732] disabled:opacity-50 flex-shrink-0"
+          title="Refresh customer list"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin text-[#F47732]' : 'text-[#737373]'}`} />
+        </button>
+      </div>
 
       {/* Search Bar, Filter & Refresh */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
@@ -636,9 +695,9 @@ export const CustomerManagementScreen: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2.5">
           {/* Active/Inactive Status Filter */}
-          <div className="w-40">
+          <div className="w-40 flex-1 sm:flex-none">
             <CustomSelect
               id="customer-status-filter"
               value={statusFilter}
@@ -656,12 +715,12 @@ export const CustomerManagementScreen: React.FC = () => {
             />
           </div>
 
-          {/* Refresh Button */}
+          {/* Refresh Button (Mobile) */}
           <button
             type="button"
             onClick={() => fetchCustomers(debouncedSearch, statusFilter, page)}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] rounded-lg shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#F47732] disabled:opacity-50 flex-shrink-0"
+            className="lg:hidden inline-flex items-center justify-center p-2 text-xs font-semibold text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] rounded-lg shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#F47732] disabled:opacity-50 flex-shrink-0"
             title="Refresh customer list"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin text-[#F47732]' : 'text-[#737373]'}`} />
@@ -880,13 +939,15 @@ export const CustomerManagementScreen: React.FC = () => {
                             </>
                           )}
 
-                          <button
-                            onClick={() => openEdit(cust)}
-                            className="inline-flex items-center gap-1 text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] text-xs font-semibold px-2.5 py-1 rounded shadow-xs transition-all"
-                            title={`Edit ${cust.businessName}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => openEdit(cust)}
+                              className="inline-flex items-center gap-1 text-[#292929] hover:text-[#F47732] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] hover:border-[#F47732] text-xs font-semibold px-2.5 py-1 rounded shadow-xs transition-all"
+                              title={`Edit ${cust.businessName}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
 
                           <button
                             onClick={() => openDetails(cust)}
@@ -966,151 +1027,220 @@ export const CustomerManagementScreen: React.FC = () => {
               </div>
             ) : null}
 
-            {/* Entity Summary Header */}
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 grid grid-cols-2 gap-3">
-              <div>
-                <span className="text-slate-400 block font-medium">Business / Customer</span>
-                <span className="font-bold text-slate-800 text-sm">{selectedCustomer.businessName}</span>
+            {!isAdmin ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <span>Only administrators have permission to modify customer profile details.</span>
               </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Contact Person</span>
-                <span className="font-semibold text-slate-800">{selectedCustomer.contactPerson}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">Mobile Phone</span>
-                <span className="font-semibold text-slate-800">{selectedCustomer.phone}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">GSTIN</span>
-                <span className="font-mono font-semibold text-slate-800">{selectedCustomer.gstin || 'Unregistered'}</span>
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Business Details */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-[#292929] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#F0E0D5] pb-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-[#F47732]" />
+                    Customer & Business Information
+                  </h4>
 
-            {/* Pricing Group & Discount Group Selectors */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assigned Pricing Group
-                </label>
-                <CustomSelect
-                  value={editPricingGroupId}
-                  onChange={(val) => setEditPricingGroupId(val)}
-                  options={[
-                    { value: '', label: `Default (${editCustomerType} base pricing)` },
-                    ...pricingGroups.map((pg: any) => ({
-                      value: pg.id || pg._id,
-                      label: `${pg.name} ${pg.isDefault ? '(Default Group)' : ''}`,
-                    })),
-                  ]}
-                />
-                <p className="text-[10px] text-slate-500 mt-0.5">Precedence: Customer Override &gt; Pricing Group &gt; Customer-Type Default</p>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Business / Store Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editBusinessName}
+                        onChange={(e) => setEditBusinessName(e.target.value)}
+                        placeholder="e.g. Acme Wholesale"
+                        required
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assigned Discount Group
-                </label>
-                <CustomSelect
-                  value={editDiscountGroupId}
-                  onChange={(val) => setEditDiscountGroupId(val)}
-                  options={[
-                    { value: '', label: `Default (${editCustomerType} standard eligibility)` },
-                    ...discountGroups.map((dg: any) => ({
-                      value: dg.id || dg._id,
-                      label: `${dg.name} ${dg.defaultDiscountPercent ? `(${dg.defaultDiscountPercent}% Base)` : ''}`,
-                    })),
-                  ]}
-                />
-                <p className="text-[10px] text-slate-500 mt-0.5">Controls coupon and promotional offer access</p>
-              </div>
-            </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Trade / Display Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editTradeName}
+                        onChange={(e) => setEditTradeName(e.target.value)}
+                        placeholder="e.g. Acme Traders"
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
 
-            {/* Credit Limit */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Approved Credit Limit (₹ INR)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
-                <input
-                  type="number"
-                  value={editCreditLimitRupees}
-                  onChange={(e) => setEditCreditLimitRupees(e.target.value)}
-                  placeholder="200000"
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
-                />
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Formatted credit limit: {formatPaiseToINR(inrToPaise(parseFloat(editCreditLimitRupees) || 0))}
-              </p>
-            </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Contact Person Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={editContactPerson}
+                        onChange={(e) => setEditContactPerson(e.target.value)}
+                        placeholder="e.g. Rajesh Kumar"
+                        required
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
 
-            {/* Payment Terms & Credit Status */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Payment Terms (Days)
-                </label>
-                <input
-                  type="number"
-                  value={editPaymentTermsDays}
-                  onChange={(e) => setEditPaymentTermsDays(e.target.value)}
-                  placeholder="30"
-                  className="w-full px-3 py-1.5 text-sm border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
-                />
-              </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Mobile Phone Number <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        placeholder="e.g. 9876543210"
+                        required
+                        maxLength={10}
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Credit Account Status
-                </label>
-                <CustomSelect
-                  value={editCreditStatus}
-                  onChange={(val) => setEditCreditStatus(val as CreditStatus)}
-                  options={[
-                    { value: CreditStatus.NORMAL, label: 'Normal (Active)' },
-                    { value: CreditStatus.ON_HOLD, label: 'On Hold' },
-                    { value: CreditStatus.RESTRICTED, label: 'Restricted' },
-                  ]}
-                />
-              </div>
-            </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        placeholder="e.g. contact@business.com"
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
 
-            {/* Access Status Switch in Modal */}
-            <div className="border border-[#F0E0D5] rounded-lg p-3 bg-[#FFF8F3]/50 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-slate-800 block">Account Ordering Access</span>
-                <span className="text-[11px] text-slate-500">
-                  {editIsActive ? 'Account is enabled and permitted to order' : 'Account is disabled / suspended from ordering'}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={editIsActive}
-                  onClick={() => setEditIsActive((prev) => !prev)}
-                  className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 ${editIsActive
-                    ? 'bg-emerald-600 focus:ring-emerald-500'
-                    : 'bg-slate-300 focus:ring-slate-400'
-                    }`}
-                  title={editIsActive ? 'Account is Enabled (Click to Disable)' : 'Account is Disabled (Click to Enable)'}
-                >
-                  <span className="sr-only">Toggle access</span>
-                  <span
-                    aria-hidden="true"
-                    className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex items-center justify-center h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${editIsActive ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                  >
-                    {editIsActive ? (
-                      <Check className="h-3 w-3 text-emerald-600 stroke-[3]" />
-                    ) : (
-                      <X className="h-3 w-3 text-slate-400 stroke-[3]" />
-                    )}
-                  </span>
-                </button>
-              </div>
-            </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        GSTIN
+                      </label>
+                      <input
+                        type="text"
+                        value={editGstin}
+                        onChange={(e) => setEditGstin(e.target.value.toUpperCase())}
+                        placeholder="15-character GSTIN"
+                        maxLength={15}
+                        className="w-full px-3 py-1.5 text-xs font-mono uppercase border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        PAN
+                      </label>
+                      <input
+                        type="text"
+                        value={editPan}
+                        onChange={(e) => setEditPan(e.target.value.toUpperCase())}
+                        placeholder="10-character PAN"
+                        maxLength={10}
+                        className="w-full px-3 py-1.5 text-xs font-mono uppercase border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Billing Address */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-bold text-[#292929] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#F0E0D5] pb-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-[#F47732]" />
+                    Billing & Registered Address
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Street Address
+                      </label>
+                      <input
+                        type="text"
+                        value={editStreet}
+                        onChange={(e) => setEditStreet(e.target.value)}
+                        placeholder="Shop/Office No, Street, Landmark"
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={editCity}
+                        onChange={(e) => setEditCity(e.target.value)}
+                        placeholder="City"
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={editState}
+                        onChange={(e) => setEditState(e.target.value)}
+                        placeholder="State"
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        PIN Code
+                      </label>
+                      <input
+                        type="text"
+                        value={editPincode}
+                        onChange={(e) => setEditPincode(e.target.value)}
+                        placeholder="6-digit PIN"
+                        maxLength={6}
+                        className="w-full px-3 py-1.5 text-xs border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Access Status Switch in Modal */}
+                <div className="border border-[#F0E0D5] rounded-lg p-3 bg-[#FFF8F3]/50 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-slate-800 block">Account Ordering Access</span>
+                    <span className="text-[11px] text-slate-500">
+                      {editIsActive ? 'Account is enabled and permitted to order' : 'Account is disabled / suspended from ordering'}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={editIsActive}
+                      onClick={() => setEditIsActive((prev) => !prev)}
+                      className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 ${editIsActive
+                        ? 'bg-emerald-600 focus:ring-emerald-500'
+                        : 'bg-slate-300 focus:ring-slate-400'
+                        }`}
+                      title={editIsActive ? 'Account is Enabled (Click to Disable)' : 'Account is Disabled (Click to Enable)'}
+                    >
+                      <span className="sr-only">Toggle access</span>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex items-center justify-center h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${editIsActive ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                      >
+                        {editIsActive ? (
+                          <Check className="h-3 w-3 text-emerald-600 stroke-[3]" />
+                        ) : (
+                          <X className="h-3 w-3 text-slate-400 stroke-[3]" />
+                        )}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Modal Actions */}
             <div className="flex justify-end gap-2">
@@ -1124,9 +1254,9 @@ export const CustomerManagementScreen: React.FC = () => {
               </button>
               <button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isAdmin}
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-[#F47732] hover:bg-[#E95B2A] text-white rounded-lg font-bold shadow-xs text-xs transition-colors"
+                className="px-4 py-2 bg-[#F47732] hover:bg-[#E95B2A] text-white rounded-lg font-bold shadow-xs text-xs transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
               </button>
@@ -1248,18 +1378,6 @@ export const CustomerManagementScreen: React.FC = () => {
                       <span className="font-mono font-semibold text-slate-800">{selectedCustomer.pan || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block">Approved Credit Limit:</span>
-                      <span className="font-semibold text-emerald-700">
-                        {formatPaiseToINR(selectedCustomer.creditLimitPaise || 0)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Payment Terms:</span>
-                      <span className="font-semibold text-slate-800">
-                        {selectedCustomer.paymentTermsDays || 30} Days
-                      </span>
-                    </div>
-                    <div>
                       <span className="text-slate-400 block">Assigned Pricing Group:</span>
                       <span className="font-semibold text-[#F47732]">
                         {selectedCustomer.pricingGroupId?.name || selectedCustomer.pricingGroupName || 'Default Group'}
@@ -1269,12 +1387,6 @@ export const CustomerManagementScreen: React.FC = () => {
                       <span className="text-slate-400 block">Assigned Discount Group:</span>
                       <span className="font-semibold text-emerald-700">
                         {selectedCustomer.discountGroupId?.name || selectedCustomer.discountGroupName || 'Default Group'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Credit Status:</span>
-                      <span className="font-semibold text-slate-800 capitalize">
-                        {selectedCustomer.creditStatus || 'Normal'}
                       </span>
                     </div>
                   </div>
@@ -1390,8 +1502,7 @@ export const CustomerManagementScreen: React.FC = () => {
           ) : null}
 
           <p className="text-slate-600 text-sm">
-            Approving will activate this customer account, set commercial credit terms, and trigger an automated B2B
-            approval notification email.
+            Approving will activate this customer account and trigger an automated B2B approval notification email.
           </p>
 
           {/* Pricing Group & Discount Group Assignment */}
@@ -1429,40 +1540,6 @@ export const CustomerManagementScreen: React.FC = () => {
                 ]}
               />
             </div>
-          </div>
-
-          {/* Credit Limit */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Credit Limit (₹ INR)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-slate-400 font-bold">₹</span>
-              <input
-                type="number"
-                value={creditLimitRupees}
-                onChange={(e) => setCreditLimitRupees(e.target.value)}
-                placeholder="200000"
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
-              />
-            </div>
-            <p className="text-[10px] text-slate-400 mt-1">
-              {formatPaiseToINR(inrToPaise(parseFloat(creditLimitRupees) || 0))} credit line granted upon approval.
-            </p>
-          </div>
-
-          {/* Payment Terms */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Payment Terms (Days)
-            </label>
-            <input
-              type="number"
-              value={paymentTermsDays}
-              onChange={(e) => setPaymentTermsDays(e.target.value)}
-              placeholder="30"
-              className="w-full px-3 py-1.5 text-sm border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732]"
-            />
           </div>
 
           <div className="pt-3 border-t border-[#F0E0D5] flex justify-end gap-2">

@@ -472,11 +472,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </span>
                 {getPaymentStatusBadge(order.paymentStatus)}
               </div>
-              {order.creditReservationPaise > 0 && (
-                <p className="text-[#E95B2A] text-[11px] font-semibold mt-1">
-                  Active Credit Hold: {formatPaiseToINR(order.creditReservationPaise)}
-                </p>
-              )}
               {order.internalNotes && (
                 <p className="text-[10px] text-slate-600 bg-slate-100 p-1.5 rounded border border-slate-200 mt-2 font-mono whitespace-pre-line">
                   {order.internalNotes}
@@ -948,12 +943,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <span>Confirm Order Cancellation</span>
               </div>
               <p className="text-[11px] text-amber-800">
-                Cancelling this order will automatically release{' '}
-                <span className="font-bold">
-                  {formatPaiseToINR(order.creditReservationPaise || order.grandTotalPaise)}
-                </span>{' '}
-                back to the retailer's available credit limit and restore reserved stock to
-                the warehouse catalogue.
+                Cancelling this order will release and restore reserved stock back to active inventory in the warehouse catalogue.
               </p>
               <input
                 type="text"

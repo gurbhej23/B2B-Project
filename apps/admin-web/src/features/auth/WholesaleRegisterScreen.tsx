@@ -91,8 +91,8 @@ export const WholesaleRegisterScreen: React.FC = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md mx-auto">
           <div className="bg-white py-8 px-6 shadow-sm rounded-2xl border border-[#F0E0D5] text-center">
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="h-8 w-8" />
@@ -113,7 +113,7 @@ export const WholesaleRegisterScreen: React.FC = () => {
                 <span>Next Steps in Onboarding:</span>
               </div>
               <p>1. Our commercial accounts team will review your business credentials & GST status.</p>
-              <p>2. You will be assigned your buyer tier, credit terms, and payment parameters.</p>
+              <p>2. You will be assigned your buyer tier, wholesale pricing, and account parameters.</p>
               <p>3. You can log in immediately to preview our institutional catalog while awaiting full pricing activation.</p>
             </div>
 
@@ -131,20 +131,20 @@ export const WholesaleRegisterScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center py-10 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center mb-6">
-        <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-xs mb-3">
-          <img src="/img.jpeg" alt="Necessity India" className="h-20 w-auto object-contain p-2" />
+    <div className="min-h-screen bg-white flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-xl mx-auto text-center mb-6">
+        <div className="inline-flex items-center justify-center bg-transparent rounded-2xl mb-3">
+          <img src="/logo-transparent.png" alt="Necessity India" className="h-20 w-auto object-contain p-1" />
         </div>
         <h1 className="text-2xl font-black tracking-tight text-[#292929]">
           Wholesale Buyer Registration
         </h1>
         <p className="text-xs text-[#737373] mt-1 max-w-md mx-auto">
-          Register your business to access institutional wholesale pricing, bulk carton volume tiers, and commercial credit terms.
+          Register your business to access institutional wholesale pricing, bulk carton volume tiers, and direct ordering.
         </p>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
+      <div className="w-full max-w-xl mx-auto">
         <div className="bg-white py-8 px-6 shadow-sm rounded-2xl sm:px-10 border border-[#F0E0D5]">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-3 text-rose-700 text-xs">

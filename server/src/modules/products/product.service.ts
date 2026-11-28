@@ -14,6 +14,7 @@ import { Order } from '../orders/order.model';
 import { ProductDiscount } from '../discounts/discount.model';
 import { ProductPricingRule } from '../pricing/pricing.model';
 import { validateTierPricing, AccountStatus, UserRole } from '@necessity/shared';
+import { escapeRegex } from '../../utils/security';
 
 function transformProductForUser(
   p: any,
@@ -270,7 +271,7 @@ export class ProductService {
 
     // Search query
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const searchRegex = new RegExp(escapeRegex(search.trim()), 'i');
       query.$or = [
         { name: searchRegex },
         { sku: searchRegex },
@@ -289,7 +290,7 @@ export class ProductService {
     }
 
     if (brand && brand !== 'all') {
-      query.brand = new RegExp(`^${brand.trim()}$`, 'i');
+      query.brand = new RegExp(`^${escapeRegex(brand.trim())}$`, 'i');
     }
 
     // Stock filtering
@@ -1222,7 +1223,7 @@ export class ProductService {
     }
 
     if (sku && sku.trim()) {
-      query.sku = new RegExp(sku.trim(), 'i');
+      query.sku = new RegExp(escapeRegex(sku.trim()), 'i');
     }
 
     if (transactionType && transactionType !== 'all') {

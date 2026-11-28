@@ -62,66 +62,11 @@ export const RetailerDashboard: React.FC = () => {
             <div>
               <p className="font-semibold">Your business account is awaiting distributor approval.</p>
               <p className="text-xs text-[#737373] mt-0.5">
-                Necessity India administrators are reviewing your registration details. Your approved credit limit, wholesale dealer pricing, and catalog access will be activated upon approval.
+                Necessity India administrators are reviewing your registration details. Your wholesale dealer pricing and catalog access will be activated upon approval.
               </p>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Credit Control & Balance Breakdown */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Approved Credit Limit */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-[#F0E0D5]">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
-            Approved Credit Limit
-          </span>
-          <div className="text-2xl font-bold text-[#292929] mt-2 tabular-nums">
-            {formatPaiseToINR(retailer?.creditLimitPaise || 0)}
-          </div>
-          <p className="text-xs text-[#737373] mt-1">
-            Terms: Net {retailer?.paymentTermsDays || 15} Days
-          </p>
-        </div>
-
-        {/* Outstanding Receivables */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-[#F0E0D5]">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
-            Current Outstanding
-          </span>
-          <div className="text-2xl font-bold mt-2 tabular-nums text-rose-600">
-            {formatPaiseToINR(retailer?.outstandingReceivablesPaise || 0)}
-          </div>
-          <p className="text-xs text-[#737373] mt-1">
-            Billed unpaid invoices
-          </p>
-        </div>
-
-        {/* Active Reservations */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-[#F0E0D5]">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#737373]">
-            Active Reservations
-          </span>
-          <div className="text-2xl font-bold text-amber-600 mt-2 tabular-nums">
-            {formatPaiseToINR(retailer?.activeReservationsPaise || 0)}
-          </div>
-          <p className="text-xs text-[#737373] mt-1">
-            Unbilled / in-flight orders
-          </p>
-        </div>
-
-        {/* Available Credit */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-[#F0E0D5] bg-[#FFF8F3]/40">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#F47732]">
-            Available Credit
-          </span>
-          <div className="text-2xl font-bold text-[#E95B2A] mt-2 tabular-nums">
-            {formatPaiseToINR(retailer?.availableCreditPaise || 0)}
-          </div>
-          <p className="text-xs text-emerald-600 mt-1 font-medium">
-            Ready for checkout
-          </p>
-        </div>
       </div>
 
       {/* Quick Action Cards */}

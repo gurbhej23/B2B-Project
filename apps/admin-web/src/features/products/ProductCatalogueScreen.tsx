@@ -111,7 +111,7 @@ export const ProductCatalogueScreen: React.FC = () => {
       {/* Top Banner */}
       <div className="bg-white text-[#292929] rounded-2xl p-6 shadow-sm border border-[#F0E0D5]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="hidden lg:block">
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-xs bg-[#FFF1E8] text-[#E95B2A] border border-[#F0E0D5] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Wholesale Catalogue
@@ -128,28 +128,13 @@ export const ProductCatalogueScreen: React.FC = () => {
           </div>
 
           {retailer && !isPending && (
-            <div className="bg-[#FFF8F3] border border-[#F0E0D5] rounded-xl p-3 text-xs flex items-center space-x-3">
-              <div>
-                <span className="text-[#737373] block text-[11px]">Available Credit Limit:</span>
-                <span className="text-sm font-bold text-[#E95B2A]">
-                  {formatPaiseToINR(
-                    Math.max(
-                      0,
-                      (retailer.creditLimitPaise || 0) -
-                      (retailer.outstandingReceivablesPaise || 0) -
-                      (retailer.activeReservationsPaise || 0)
-                    )
-                  )}
-                </span>
-              </div>
-              <button
-                onClick={openCart}
-                className="px-3.5 py-1.5 bg-[#F47732] hover:bg-[#E95B2A] text-white font-bold rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm shadow-[#F47732]/20"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                <span>View Cart</span>
-              </button>
-            </div>
+            <button
+              onClick={openCart}
+              className="px-4 py-2 bg-[#F47732] hover:bg-[#E95B2A] text-white font-bold rounded-lg transition-colors flex items-center space-x-2 shadow-sm shadow-[#F47732]/20 text-xs sm:text-sm"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              <span>View Cart</span>
+            </button>
           )}
         </div>
       </div>

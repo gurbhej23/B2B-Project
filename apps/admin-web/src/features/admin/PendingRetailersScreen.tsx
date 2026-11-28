@@ -7,9 +7,8 @@ import {
   Clock,
   ShieldCheck,
   AlertCircle,
-  IndianRupee,
 } from 'lucide-react';
-import { AccountStatus, CreditStatus, CustomerType, formatPaiseToINR, inrToPaise } from '@necessity/shared';
+import { AccountStatus, CreditStatus, CustomerType, formatPaiseToINR } from '@necessity/shared';
 
 export const PendingRetailersScreen: React.FC = () => {
   const [pendingList, setPendingList] = useState<any[]>([]);
@@ -25,8 +24,6 @@ export const PendingRetailersScreen: React.FC = () => {
   const [customerType, setCustomerType] = useState<CustomerType>(CustomerType.RETAILER);
   const [pricingGroupId, setPricingGroupId] = useState('');
   const [discountGroupId, setDiscountGroupId] = useState('');
-  const [creditLimitRupees, setCreditLimitRupees] = useState('200000');
-  const [paymentTermsDays, setPaymentTermsDays] = useState('30');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
@@ -68,8 +65,6 @@ export const PendingRetailersScreen: React.FC = () => {
     else setCustomerType(CustomerType.RETAILER);
     setPricingGroupId(retailer.pricingGroupId?._id || retailer.pricingGroupId || '');
     setDiscountGroupId(retailer.discountGroupId?._id || retailer.discountGroupId || '');
-    setCreditLimitRupees('200000');
-    setPaymentTermsDays('30');
     setActionSuccess(null);
   };
 
@@ -79,21 +74,18 @@ export const PendingRetailersScreen: React.FC = () => {
     setError(null);
 
     try {
-      const creditLimitPaise = inrToPaise(parseFloat(creditLimitRupees) || 0);
-      const termsDays = parseInt(paymentTermsDays, 10) || 15;
-
       const res = await api.patch(`/retailers/${selectedRetailer.retailerId}/approval`, {
         status: newStatus,
         customerType: newStatus === AccountStatus.ACTIVE ? customerType : undefined,
         pricingGroupId: newStatus === AccountStatus.ACTIVE && pricingGroupId ? pricingGroupId : undefined,
         discountGroupId: newStatus === AccountStatus.ACTIVE && discountGroupId ? discountGroupId : undefined,
-        creditLimitPaise: newStatus === AccountStatus.ACTIVE ? creditLimitPaise : 0,
-        paymentTermsDays: termsDays,
+        creditLimitPaise: 0,
+        paymentTermsDays: 0,
         creditStatus: CreditStatus.NORMAL,
       });
 
       const emailInfo = res.data?.data?.emailNotification;
-      let actionMsg = `Retailer "${selectedRetailer.businessName}" has been successfully ${newStatus === AccountStatus.ACTIVE ? 'APPROVED as ' + customerType.toUpperCase() + ' with credit limit ' + formatPaiseToINR(creditLimitPaise) : 'REJECTED'
+      let actionMsg = `Retailer "${selectedRetailer.businessName}" has been successfully ${newStatus === AccountStatus.ACTIVE ? 'APPROVED as ' + customerType.toUpperCase() : 'REJECTED'
         }.`;
 
       if (emailInfo?.success) {
@@ -118,10 +110,10 @@ export const PendingRetailersScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="hidden lg:block">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Retailer Account Approvals</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Review submitted KYC details, verify GSTINs, and assign approved credit limits & payment terms.
+            Review submitted KYC details, verify GSTINs, and assign customer tiers & pricing groups.
           </p>
         </div>
 
@@ -229,7 +221,7 @@ export const PendingRetailersScreen: React.FC = () => {
                           className="inline-flex items-center justify-center px-3 py-1.5 bg-[#F47732] hover:bg-[#E95B2A] text-white rounded-lg text-xs font-semibold shadow-sm transition"
                         >
                           <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
-                          Review & Set Credit
+                          Review & Approve
                         </button>
                       </div>
                     </td>
@@ -378,52 +370,6 @@ export const PendingRetailersScreen: React.FC = () => {
                     ]}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Credit terms setting */}
-            <div className="space-y-4 pt-2">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-slate-600 border-b border-slate-100 pb-1">
-                Credit & Payment Policy Assignment
-              </h4>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Approved Credit Limit (INR ₹)
-                </label>
-                <div className="relative rounded-lg shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <IndianRupee className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="10000"
-                    value={creditLimitRupees}
-                    onChange={(e) => setCreditLimitRupees(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-semibold focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732] text-sm"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Formula: Available Credit = Credit Limit ({formatPaiseToINR(inrToPaise(parseFloat(creditLimitRupees) || 0))}) - Receivables - Active Reservations
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Payment Terms (Invoice Due Period)
-                </label>
-                <CustomSelect
-                  value={paymentTermsDays}
-                  onChange={(val) => setPaymentTermsDays(val)}
-                  options={[
-                    { value: '15', label: 'Net 15 Days (Standard)' },
-                    { value: '30', label: 'Net 30 Days (Institutional)' },
-                    { value: '45', label: 'Net 45 Days (Key Accounts)' },
-                    { value: '60', label: 'Net 60 Days (Enterprise Contract)' },
-                    { value: '0', label: 'Immediate / Advance Payment Only' },
-                  ]}
-                />
               </div>
             </div>
 

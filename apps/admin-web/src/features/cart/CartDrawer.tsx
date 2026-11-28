@@ -10,8 +10,6 @@ import {
   CreditCard,
   Building,
   QrCode,
-  ShieldAlert,
-  ShieldCheck,
   Truck,
   CheckCircle2,
   AlertCircle,
@@ -19,7 +17,6 @@ import {
 } from 'lucide-react';
 import {
   PaymentMethod,
-  CreditStatus,
   formatPaiseToINR,
 } from '@necessity/shared';
 
@@ -39,7 +36,7 @@ export const CartDrawer: React.FC = () => {
   const { user, retailer, refreshProfile } = useAuth();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    PaymentMethod.CREDIT_ACCOUNT
+    PaymentMethod.PAYMENT_GATEWAY
   );
   const [customerNotes, setCustomerNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,29 +45,8 @@ export const CartDrawer: React.FC = () => {
 
   if (!isCartOpen) return null;
 
-  const grandTotal = summary?.grandTotalPaise || 0;
-  const availableCredit = retailer
-    ? Math.max(
-        0,
-        (retailer.creditLimitPaise || 0) -
-          (retailer.outstandingReceivablesPaise || 0) -
-          (retailer.activeReservationsPaise || 0)
-      )
-    : 0;
-
-  const isCreditEligible =
-    retailer?.creditStatus === CreditStatus.NORMAL && availableCredit >= grandTotal;
-
-  const creditShortfall = Math.max(0, grandTotal - availableCredit);
-
   const handleCheckout = async () => {
     if (items.length === 0) return;
-    if (paymentMethod === PaymentMethod.CREDIT_ACCOUNT && !isCreditEligible) {
-      setSubmitError(
-        'Insufficient available credit. Please select Bank Transfer or UPI.'
-      );
-      return;
-    }
 
     setIsSubmitting(true);
     setSubmitError(null);
@@ -151,7 +127,7 @@ export const CartDrawer: React.FC = () => {
                   {formatPaiseToINR(placedOrder.grandTotalPaise)}
                 </span>{' '}
                 has been recorded and routed to dispatch warehouse. Inventory stock
-                and credit limits have been updated.
+                has been reserved.
               </p>
               <button
                 onClick={() => {
@@ -318,58 +294,6 @@ export const CartDrawer: React.FC = () => {
                   </div>
                 )}
 
-                {/* Retailer Credit Facility Assessment */}
-                {retailer && (
-                  <div
-                    className={`rounded-xl p-3.5 border text-xs ${
-                      isCreditEligible
-                        ? 'bg-emerald-50/70 border-emerald-200'
-                        : 'bg-amber-50/70 border-amber-200'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2 font-semibold">
-                      {isCreditEligible ? (
-                        <>
-                          <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                          <span className="text-emerald-900">
-                            Credit Approved Account
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <ShieldAlert className="h-4 w-4 text-amber-600" />
-                          <span className="text-amber-900">
-                            Credit Limit Exceeded
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-[#737373] block">Available Credit:</span>
-                        <span className="font-bold text-[#292929]">
-                          {formatPaiseToINR(availableCredit)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[#737373] block">Payment Terms:</span>
-                        <span className="font-bold text-[#292929]">
-                          Net {retailer.paymentTermsDays || 30} Days
-                        </span>
-                      </div>
-                    </div>
-                    {!isCreditEligible && grandTotal > 0 && (
-                      <p className="mt-2 text-[11px] text-amber-800">
-                        Order total exceeds available credit by{' '}
-                        <span className="font-bold">
-                          {formatPaiseToINR(creditShortfall)}
-                        </span>
-                        . Please select Bank Transfer or UPI.
-                      </p>
-                    )}
-                  </div>
-                )}
-
                 {/* Payment Method Selector */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-[#292929] uppercase tracking-wider block">
@@ -378,7 +302,7 @@ export const CartDrawer: React.FC = () => {
                   <div className="space-y-2">
                     <label
                       className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                        paymentMethod === PaymentMethod.CREDIT_ACCOUNT
+                        paymentMethod === PaymentMethod.PAYMENT_GATEWAY
                           ? 'border-[#F47732] bg-[#FFF8F3]'
                           : 'border-[#F0E0D5] hover:bg-[#FFF8F3]/40'
                       }`}
@@ -387,20 +311,19 @@ export const CartDrawer: React.FC = () => {
                         <input
                           type="radio"
                           name="paymentMethod"
-                          value={PaymentMethod.CREDIT_ACCOUNT}
-                          checked={paymentMethod === PaymentMethod.CREDIT_ACCOUNT}
+                          value={PaymentMethod.PAYMENT_GATEWAY}
+                          checked={paymentMethod === PaymentMethod.PAYMENT_GATEWAY}
                           onChange={() =>
-                            setPaymentMethod(PaymentMethod.CREDIT_ACCOUNT)
+                            setPaymentMethod(PaymentMethod.PAYMENT_GATEWAY)
                           }
-                          disabled={!isCreditEligible}
                           className="accent-[#F47732] text-[#F47732] focus:ring-[#F47732]"
                         />
                         <div>
                           <p className="text-xs font-bold text-[#292929]">
-                            Credit Account
+                            Online Payment (Razorpay / Cards / Netbanking)
                           </p>
                           <p className="text-[10px] text-[#737373]">
-                            Post to 30-day revolving credit balance
+                            Instant settlement with digital receipt
                           </p>
                         </div>
                       </div>
@@ -496,9 +419,7 @@ export const CartDrawer: React.FC = () => {
                   disabled={
                     isSubmitting ||
                     isCalculating ||
-                    items.length === 0 ||
-                    (paymentMethod === PaymentMethod.CREDIT_ACCOUNT &&
-                      !isCreditEligible)
+                    items.length === 0
                   }
                   className="w-full py-3 px-4 bg-[#F47732] hover:bg-[#E95B2A] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-sm transition-colors flex items-center justify-center space-x-2"
                 >

@@ -26,3 +26,4 @@ paymentRouter.post('/bank-transfer', PaymentController.recordBankTransfer);
 paymentRouter.get('/pending', requireRole(...FINANCE_ROLES), PaymentController.getPending);
 paymentRouter.patch('/:id/verify', requireRole(...FINANCE_ROLES), PaymentController.verifyPayment);
 paymentRouter.patch('/:id/reject', requireRole(...FINANCE_ROLES), PaymentController.rejectPayment);
+paymentRouter.post('/:id/refund', requireRole(...FINANCE_ROLES), PaymentController.refund);

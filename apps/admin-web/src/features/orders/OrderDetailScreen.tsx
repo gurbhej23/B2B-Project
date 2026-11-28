@@ -67,7 +67,7 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
 
   // States
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const [paymentStatusSelect, setPaymentStatusSelect] = useState<'PAID' | 'UNPAID'>('UNPAID');
+  const [paymentStatusSelect, setPaymentStatusSelect] = useState<'PAID' | 'UNPAID' | 'REFUNDED'>('UNPAID');
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -90,11 +90,22 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
   // Sync payment select state with order data
   useEffect(() => {
     if (order) {
+      const isRefunded =
+        order.paymentStatus === 'refunded' ||
+        order.paymentStatus === 'REFUNDED';
       const isPaid =
         order.paymentStatus === 'successful' ||
         order.paymentStatus === 'PAID' ||
+        order.paymentStatus === 'paid' ||
         (order.totalPaidPaise && order.totalPaidPaise >= (order.grandTotalPaise || 0));
-      setPaymentStatusSelect(isPaid ? 'PAID' : 'UNPAID');
+
+      if (isRefunded) {
+        setPaymentStatusSelect('REFUNDED');
+      } else if (isPaid) {
+        setPaymentStatusSelect('PAID');
+      } else {
+        setPaymentStatusSelect('UNPAID');
+      }
     }
   }, [order?.paymentStatus, order?.totalPaidPaise, order?.grandTotalPaise]);
 
@@ -208,7 +219,7 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
 
   // Payment status mutation
   const updatePaymentStatusMutation = useMutation({
-    mutationFn: async (statusVal: 'PAID' | 'UNPAID') => {
+    mutationFn: async (statusVal: 'PAID' | 'UNPAID' | 'REFUNDED') => {
       const targetId = order?.id || order?._id || orderId;
       const res = await apiClient.patch(`/orders/${targetId}/payment-status`, {
         paymentStatus: statusVal,
@@ -393,9 +404,14 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
     year: 'numeric',
   });
 
+  const isRefunded =
+    order.paymentStatus === 'refunded' ||
+    order.paymentStatus === 'REFUNDED';
+
   const isPaid =
     order.paymentStatus === 'successful' ||
     order.paymentStatus === 'PAID' ||
+    order.paymentStatus === 'paid' ||
     (order.totalPaidPaise && order.totalPaidPaise >= (order.grandTotalPaise || 0));
 
   const items = order.items && order.items.length > 0 ? order.items : [];
@@ -549,18 +565,31 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
 
               {/* Cancellation Reason input if CANCELLED */}
               {pendingStatusModal.targetStatus === OrderStatus.CANCELLED && (
-                <div className="mt-4 space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
-                    <span>Cancellation Reason</span>
-                    <span className="text-[10px] text-red-500 font-normal">Required</span>
-                  </label>
-                  <textarea
-                    value={cancellationReason}
-                    onChange={(e) => setCancellationReason(e.target.value)}
-                    placeholder="e.g. Customer requested cancellation / Stock discrepancy / Payment issue..."
-                    rows={3}
-                    className="w-full text-xs p-2.5 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                  />
+                <div className="mt-4 space-y-3">
+                  {isPaid && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-xs text-amber-800">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Automated Razorpay Refund Notice:</span>
+                        <p className="mt-0.5 text-amber-700">
+                          This order is marked as paid. Cancelling it will automatically trigger an instant refund to the customer via Razorpay and email them a refund confirmation.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                      <span>Cancellation Reason</span>
+                      <span className="text-[10px] text-red-500 font-normal">Required</span>
+                    </label>
+                    <textarea
+                      value={cancellationReason}
+                      onChange={(e) => setCancellationReason(e.target.value)}
+                      placeholder="e.g. Customer requested cancellation / Stock discrepancy / Payment issue..."
+                      rows={3}
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -1065,12 +1094,25 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Status</span>
                 <span
-                  className={`font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'
+                  className={`font-bold ${isRefunded
+                    ? 'text-purple-700 bg-purple-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-purple-200'
+                    : isPaid
+                      ? 'text-emerald-600'
+                      : 'text-amber-600'
                     }`}
                 >
-                  {isPaid ? 'PAID' : 'UNPAID'}
+                  {isRefunded ? 'REFUNDED' : isPaid ? 'PAID' : 'UNPAID'}
                 </span>
               </div>
+
+              {isRefunded && (
+                <div className="flex items-center justify-between bg-purple-50/70 p-2 rounded-lg border border-purple-100">
+                  <span className="text-purple-700 font-medium">Refund ID</span>
+                  <span className="text-purple-900 font-mono text-[11px] font-semibold">
+                    {order.payments?.[0]?.refundId || 'Processed via Razorpay'}
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Transaction ID</span>
@@ -1081,9 +1123,9 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">Paid on</span>
+                <span className="text-slate-500">{isRefunded ? 'Refunded on' : 'Paid on'}</span>
                 <span className="text-slate-700 font-medium">
-                  {isPaid ? formattedPlacedDateLong : '-'}
+                  {isRefunded || isPaid ? formattedPlacedDateLong : '-'}
                 </span>
               </div>
 
@@ -1100,11 +1142,12 @@ export const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({
               <div className="flex items-center gap-2">
                 <select
                   value={paymentStatusSelect}
-                  onChange={(e) => setPaymentStatusSelect(e.target.value as 'PAID' | 'UNPAID')}
+                  onChange={(e) => setPaymentStatusSelect(e.target.value as 'PAID' | 'UNPAID' | 'REFUNDED')}
                   className="flex-1 text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 font-medium focus:outline-none focus:border-[#F47732]"
                 >
                   <option value="UNPAID">UNPAID</option>
                   <option value="PAID">PAID</option>
+                  <option value="REFUNDED">REFUNDED</option>
                 </select>
 
                 <button

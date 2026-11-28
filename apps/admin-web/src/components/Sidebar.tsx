@@ -89,24 +89,24 @@ export const Sidebar: React.FC = () => {
           transition-transform duration-300 ease-in-out select-none flex flex-col
           
           /* Mobile Drawer Positioning */
-          fixed top-0 bottom-0 left-0 z-50 w-72 max-w-[85vw] p-4 shadow-2xl h-screen overflow-hidden
+          fixed top-0 bottom-0 left-0 z-50 w-72 max-w-[85vw] shadow-2xl p-2 h-screen overflow-hidden
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
 
           /* Desktop Permanent Fixed-Width Sidebar */
           lg:sticky lg:top-0 lg:bottom-auto lg:left-auto lg:z-20
-          lg:w-64 lg:h-screen lg:p-4 lg:shadow-none lg:translate-x-0
+          lg:w-64 lg:h-screen lg:pl-4 lg:pr-4 lg:shadow-none lg:translate-x-0
           lg:flex-shrink-0 lg:opacity-100 lg:overflow-hidden
         `}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-white">
           {/* Top Section: Brand Logo (Only Logo, No Text) & Mobile Close Button */}
-          <div className="flex-shrink-0 pb-3 mb-2 border-b border-[#F0E0D5]">
-            <div className="flex items-center justify-between">
-              <Link to={isAdmin ? '/admin' : '/retailer'} onClick={handleNavClick} className="block">
+          <div className="flex-shrink-0 mb-2 border-b border-[#F0E0D5]">
+            <div className='flex justify-between items-start'>
+              <Link to={isAdmin ? '/admin' : '/retailer'} onClick={handleNavClick} className="block py-0.5">
                 <img
-                  src="/img.jpeg"
+                  src="/logo-transparent.png"
                   alt="Necessity India"
-                  className=""
+                  className="h-14 sm:h-40 w-auto max-w-[200px] object-contain drop-shadow-xs"
                 />
               </Link>
               <button

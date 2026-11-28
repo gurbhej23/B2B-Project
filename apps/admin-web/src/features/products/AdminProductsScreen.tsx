@@ -276,18 +276,20 @@ export const AdminProductsScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Header & Quick Action Buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#292929] tracking-tight flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-[#F0E0D5]">
+        <div className="max-w-3xl">
+          <h1 className="text-2xl sm:text-2xl font-bold tracking-tight text-[#292929] flex items-center gap-3">
             <Package className="h-6 w-6 text-[#F47732]" />
             Products & Stock Catalogue
           </h1>
+          <span className="text-sm text-[#292929]">
+            Manage products, monitor stock levels, and keep your product catalogue organized in one place.</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Link
             to="/admin/products/import"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#292929] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] rounded-lg shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-[#292929] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] rounded-lg shadow-xs transition-all"
           >
             <Upload className="h-3.5 w-3.5 text-[#737373]" />
             <span>Import CSV</span>
@@ -295,7 +297,7 @@ export const AdminProductsScreen: React.FC = () => {
 
           <Link
             to="/admin/products/export"
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#292929] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] rounded-lg shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-[#292929] bg-white hover:bg-[#FFF8F3] border border-[#F0E0D5] rounded-lg shadow-xs transition-all"
           >
             <Download className="h-3.5 w-3.5 text-[#737373]" />
             <span>Export</span>
@@ -303,7 +305,7 @@ export const AdminProductsScreen: React.FC = () => {
 
           <Link
             to="/admin/products/new"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#F47732] hover:bg-[#E95B2A] rounded-lg shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-[#F47732] hover:bg-[#E95B2A] rounded-lg shadow-xs transition-all"
           >
             <Plus className="h-4 w-4" />
             <span>Add Products</span>
@@ -338,7 +340,7 @@ export const AdminProductsScreen: React.FC = () => {
       )}
 
       {/* Search Bar, Filter & Refresh */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 lg:flex lg:flex-row lg:items-center lg:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#737373]" />
           <input
@@ -366,7 +368,7 @@ export const AdminProductsScreen: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2.5 ">
 
           {/* Status Filter */}
           <div className="w-36 sm:w-40">
@@ -401,10 +403,10 @@ export const AdminProductsScreen: React.FC = () => {
       </div>
 
       {/* Secondary Filter Row: Brand, Stock, Sort */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
-        <div className="flex flex-wrap items-center gap-2.5">
+      <div className="text-xs pt-1 lg:justify-between">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Category Filter */}
-          <div className="w-40 sm:w-44">
+          <div className="w-70 sm:w-74">
             <CustomSelect
               id="product-category-filter"
               value={selectedCategory}
@@ -412,7 +414,6 @@ export const AdminProductsScreen: React.FC = () => {
                 setSelectedCategory(val);
                 setPage(1);
               }}
-              icon={<Filter className="h-3.5 w-3.5" />}
               options={[
                 { value: '', label: 'All Categories' },
                 ...categories.map((c: any) => ({
@@ -420,11 +421,11 @@ export const AdminProductsScreen: React.FC = () => {
                   label: c.name,
                 })),
               ]}
-              title="Filter by category"
+              size="sm"
             />
           </div>
           {/* Brand */}
-          <div className="w-40 sm:w-44">
+          <div className="w-70 sm:w-74">
             <CustomSelect
               value={selectedBrand}
               onChange={(val) => {
@@ -443,7 +444,7 @@ export const AdminProductsScreen: React.FC = () => {
           </div>
 
           {/* Stock Filter */}
-          <div className="w-40 sm:w-44">
+          <div className="w-70 sm:w-74">
             <CustomSelect
               value={stockFilter}
               onChange={(val) => {
@@ -461,7 +462,7 @@ export const AdminProductsScreen: React.FC = () => {
           </div>
 
           {/* Sort By */}
-          <div className="flex items-center gap-1 w-44 sm:w-48">
+          <div className="w-70 sm:w-74">
             <div className="flex-1">
               <CustomSelect
                 value={sortBy}
@@ -476,20 +477,16 @@ export const AdminProductsScreen: React.FC = () => {
                 size="sm"
               />
             </div>
-            <button
+            {/* <button
               type="button"
               onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
               className="p-1.5 border border-[#F0E0D5] bg-white hover:bg-[#FFF8F3] rounded-lg text-[#737373] hover:text-[#F47732] transition-colors"
               title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
-            </button>
+            </button> */}
           </div>
         </div>
-
-        <span className="text-xs font-semibold px-2.5 py-1.5 bg-[#FFF8F3] text-[#F47732] rounded-lg border border-[#F0E0D5] whitespace-nowrap ml-auto">
-          {pagination.total} Total Products
-        </span>
       </div>
 
       {/* Bulk Actions Floating Bar */}
@@ -812,7 +809,7 @@ export const AdminProductsScreen: React.FC = () => {
 
       {/* MODAL 1: VIEW DETAILS DRAWER */}
       {detailProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -1021,7 +1018,7 @@ export const AdminProductsScreen: React.FC = () => {
 
       {/* MODAL 2: DUPLICATE PRODUCT */}
       {duplicateSource && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#F0E0D5] space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#F0E0D5]">
               <h3 className="font-bold text-[#292929] text-sm flex items-center gap-2">
@@ -1092,7 +1089,7 @@ export const AdminProductsScreen: React.FC = () => {
 
       {/* MODAL 3: ADJUST STOCK */}
       {adjustingProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#F0E0D5] space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#F0E0D5]">
               <h3 className="font-bold text-[#292929] text-sm flex items-center gap-2">
@@ -1184,7 +1181,7 @@ export const AdminProductsScreen: React.FC = () => {
 
       {/* MODAL 4: DELETE PRODUCT CONFIRMATION */}
       {productToDelete && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start gap-3">
               <div className="p-3 bg-rose-100 rounded-xl text-rose-600 flex-shrink-0">

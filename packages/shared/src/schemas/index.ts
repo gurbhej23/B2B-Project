@@ -340,3 +340,26 @@ export const validateCouponSchema = z.object({
   deliveryStateCode: z.string().optional().default('27'),
 });
 
+export const updateCustomerDetailsSchema = z.object({
+  businessName: z.string().min(2, 'Business name must be at least 2 characters').optional(),
+  tradeName: z.string().optional(),
+  contactPerson: z.string().min(2, 'Contact person name is required').optional(),
+  phone: z.string().regex(PHONE_REGEX, 'Enter a valid 10-digit Indian phone number').optional(),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  gstin: z
+    .string()
+    .toUpperCase()
+    .regex(GSTIN_REGEX, 'Enter a valid 15-character GSTIN')
+    .optional()
+    .or(z.literal('')),
+  pan: z
+    .string()
+    .toUpperCase()
+    .regex(PAN_REGEX, 'Enter a valid 10-character PAN')
+    .optional()
+    .or(z.literal('')),
+  billingAddress: addressSchema.optional(),
+  isActive: z.boolean().optional(),
+});
+
+

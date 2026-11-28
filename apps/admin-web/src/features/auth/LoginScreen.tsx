@@ -49,9 +49,9 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-center sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-10">
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="w-full max-w-md mx-auto">
         <div className="bg-white py-8 px-6 shadow-sm rounded-2xl sm:px-10 border border-[#F0E0D5]">
           {error && (
             <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-3 text-red-700 text-sm">
@@ -63,8 +63,8 @@ export const LoginScreen: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
               {/* Existing Logo Card */}
-              <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-xs">
-                <img src="/img.jpeg" alt="Necessity India" className="h-37 w-[210px] pb-5" />
+              <div className="inline-flex items-center justify-center bg-transparent rounded-2xl">
+                <img src="/logo-transparent.png" alt="Necessity India" className="h-20 w-auto object-contain pb-2" />
               </div>
             </div>
             <div>

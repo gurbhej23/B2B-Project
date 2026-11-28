@@ -8,8 +8,10 @@ import { Coupon } from '../discounts/discount.model';
 import { discountService } from '../discounts/discount.service';
 import { auditLogger } from '../audit/audit.service';
 import { orderNotificationService } from './order-notification.service';
+import { paymentService } from '../payments/payment.service';
 import { logger } from '../../config/logger';
 import { ApiError } from '../../utils/api-error';
+import { escapeRegex } from '../../utils/security';
 import {
   UserRole,
   AccountStatus,
@@ -379,7 +381,7 @@ export class OrderService {
     }
 
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const searchRegex = new RegExp(escapeRegex(search.trim()), 'i');
       andConditions.push({
         $or: [
           { orderNumber: searchRegex },
@@ -573,6 +575,22 @@ export class OrderService {
       }
 
       order.cancellationReason = reason || `Cancelled by ${currentUser.name || currentUser.email}`;
+
+      // 3. Automated Refund Trigger for paid orders
+      const isPaid =
+        order.paymentStatus === PaymentStatus.PAID ||
+        order.paymentStatus === PaymentStatus.SUCCESSFUL ||
+        (order.totalPaidPaise && order.totalPaidPaise > 0);
+
+      if (isPaid) {
+        try {
+          await paymentService.refundPayment(order.id, currentUser, reason || order.cancellationReason);
+        } catch (refundErr: any) {
+          logger.error(
+            `[OrderService] Automatic refund attempt on order ${order.orderNumber} cancellation failed: ${refundErr.message}`
+          );
+        }
+      }
     }
 
     // Finalize stock decrement and convert reservation to receivables upon DELIVERED or PICKED_UP
@@ -828,7 +846,11 @@ export class OrderService {
     }
 
     const normalizedStatus = (paymentStatus || '').toUpperCase();
-    if (normalizedStatus === 'PAID' || normalizedStatus === 'SUCCESSFUL') {
+    if (normalizedStatus === 'REFUNDED') {
+      order.paymentStatus = PaymentStatus.REFUNDED;
+      order.totalPaidPaise = 0;
+      order.remainingBalancePaise = order.grandTotalPaise;
+    } else if (normalizedStatus === 'PAID' || normalizedStatus === 'SUCCESSFUL') {
       order.paymentStatus = PaymentStatus.SUCCESSFUL;
       order.totalPaidPaise = order.grandTotalPaise;
       order.remainingBalancePaise = 0;

@@ -235,7 +235,7 @@ describe('Necessity India B2B — Admin Dashboard & Product Pricing Margin Suite
 
       // Verify associated Order paymentStatus updated
       const updatedOrder = await Order.findById(testOrderId);
-      expect(updatedOrder?.paymentStatus).toBe(PaymentStatus.SUCCESSFUL);
+      expect(updatedOrder?.paymentStatus).toBe(PaymentStatus.PAID);
 
       // Verification queue now decreases
       const pendingAfter = await PaymentTransaction.find({

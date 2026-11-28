@@ -153,18 +153,18 @@ export const AnalyticsReportsScreen: React.FC = () => {
     <div className="space-y-6">
       {/* Top Header Card */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+        <div className="hidden lg:block">
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Reports & Business Analytics
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Authoritative revenue auditing, tax invoice reconciliation, credit balances, and fulfillment pipeline.
+            Authoritative revenue auditing, tax invoice reconciliation, and fulfillment pipeline.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Date Preset Buttons */}
-          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
+          <div className="flex flex-wrap sm:flex-nowrap items-center bg-slate-50 p-1 rounded-xl border border-slate-200 overflow-x-auto max-w-full touch-scroll">
             {[
               { id: 'today', label: 'Today' },
               { id: '7d', label: '7 Days' },
@@ -435,7 +435,7 @@ export const AnalyticsReportsScreen: React.FC = () => {
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <div>
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Top Wholesale Clients</h2>
-              <p className="text-xs text-slate-500">Highest gross purchasers and credit exposure</p>
+              <p className="text-xs text-slate-500">Highest gross purchasers and order volume</p>
             </div>
             <Users className="h-4 w-4 text-[#F47732]" />
           </div>

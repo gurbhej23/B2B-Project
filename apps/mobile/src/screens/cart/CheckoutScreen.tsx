@@ -14,6 +14,7 @@ import { mobileApi, extractErrorMessage } from '../../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { formatPaiseToINR, PaymentMethod } from '@necessity/shared';
+import RazorpayCheckout from 'react-native-razorpay';
 import { colors } from '../../theme/colors';
 
 export const CheckoutScreen: React.FC = () => {
@@ -42,7 +43,7 @@ export const CheckoutScreen: React.FC = () => {
     retailer?.shippingAddress?.pincode || retailer?.billingAddress?.pincode || ''
   );
   const [customerNotes, setCustomerNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CREDIT_ACCOUNT);
+  const paymentMethod = PaymentMethod.PAYMENT_GATEWAY;
 
   // Coupon state
   const [couponInput, setCouponInput] = useState('');
@@ -54,9 +55,6 @@ export const CheckoutScreen: React.FC = () => {
   const [placedOrder, setPlacedOrder] = useState<any | null>(null);
 
   const totalPaise = summary ? summary.grandTotalPaise : cartSubtotalPaise * 1.18;
-  const availableCreditPaise = retailer?.availableCreditPaise || 0;
-  const hasSufficientCredit =
-    paymentMethod !== PaymentMethod.CREDIT_ACCOUNT || availableCreditPaise >= totalPaise;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) {
@@ -93,18 +91,6 @@ export const CheckoutScreen: React.FC = () => {
       return;
     }
 
-    if (paymentMethod === PaymentMethod.CREDIT_ACCOUNT && availableCreditPaise < totalPaise) {
-      Alert.alert(
-        'Credit Limit Exceeded',
-        `Your available credit is ${formatPaiseToINR(
-          availableCreditPaise
-        )}, which is less than the order total of ${formatPaiseToINR(
-          totalPaise
-        )}. Please choose Bank Transfer or contact accounts.`
-      );
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const idempotencyKey = `ord-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -134,7 +120,59 @@ export const CheckoutScreen: React.FC = () => {
       const res = await mobileApi.post('/orders/checkout', payload);
       if (res.success && res.data) {
         clearCart();
-        setPlacedOrder(res.data);
+        const createdOrder = res.data;
+
+        // If Payment Gateway selected, trigger Razorpay Checkout flow
+        if (paymentMethod === PaymentMethod.PAYMENT_GATEWAY) {
+          try {
+            const intentRes = await mobileApi.post('/payments/intent', {
+              orderId: createdOrder.id || createdOrder._id,
+            });
+
+            if (intentRes.success && intentRes.data) {
+              const { keyId, providerOrderId, amountPaise } = intentRes.data;
+
+              const cleanContact = (user?.phone || '').replace(/\D/g, '').slice(-10);
+
+              const options = {
+                description: `Necessity Order #${createdOrder.orderNumber}`,
+                currency: 'INR',
+                key: keyId,
+                amount: amountPaise,
+                name: 'Necessity India',
+                order_id: providerOrderId,
+                prefill: {
+                  email: user?.email || (retailer as any)?.email || '',
+                  contact: cleanContact,
+                  name: user?.name || retailer?.businessName || '',
+                },
+                theme: { color: colors.primary },
+              };
+
+              const paymentData = await RazorpayCheckout.open(options);
+
+              // Verify payment on backend
+              const verifyRes = await mobileApi.post('/payments/verify', {
+                providerOrderId: paymentData.razorpay_order_id,
+                providerPaymentId: paymentData.razorpay_payment_id,
+                signature: paymentData.razorpay_signature,
+              });
+
+              if (verifyRes.success) {
+                createdOrder.paymentStatus = 'paid';
+              }
+            }
+          } catch (payErr: any) {
+            // User cancelled or payment failed - inform user, order is preserved
+            const msg = payErr?.description || payErr?.message || 'Payment not completed';
+            Alert.alert(
+              'Payment Pending',
+              `Your order #${createdOrder.orderNumber} was saved, but online payment was not completed (${msg}). You can complete payment anytime from Order Details.`
+            );
+          }
+        }
+
+        setPlacedOrder(createdOrder);
       } else {
         throw new Error(res.message || 'Failed to place order');
       }
@@ -167,8 +205,8 @@ export const CheckoutScreen: React.FC = () => {
             <View style={styles.successRow}>
               <Text style={styles.successLabel}>Payment Terms</Text>
               <Text style={styles.successValue}>
-                {placedOrder.paymentMethod === PaymentMethod.CREDIT_ACCOUNT
-                  ? `Net ${retailer?.paymentTermsDays || 30} Days Credit`
+                {placedOrder.paymentMethod === PaymentMethod.PAYMENT_GATEWAY
+                  ? 'Razorpay Online Settlement'
                   : placedOrder.paymentMethod}
               </Text>
             </View>
@@ -408,69 +446,21 @@ export const CheckoutScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Payment Terms Selection */}
+        {/* Payment Method - Exclusively Razorpay */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Commercial Settlement Terms</Text>
+          <Text style={styles.cardTitle}>Payment Method</Text>
 
-          <TouchableOpacity
-            style={[
-              styles.paymentOption,
-              paymentMethod === PaymentMethod.CREDIT_ACCOUNT && styles.selectedPaymentOption,
-            ]}
-            onPress={() => setPaymentMethod(PaymentMethod.CREDIT_ACCOUNT)}
-          >
+          <View style={[styles.paymentOption, styles.selectedPaymentOption]}>
             <View style={styles.radioDot}>
-              {paymentMethod === PaymentMethod.CREDIT_ACCOUNT && <View style={styles.radioInner} />}
+              <View style={styles.radioInner} />
             </View>
             <View style={styles.paymentDetails}>
-              <Text style={styles.paymentName}>
-                Commercial Credit Facility (Net {retailer?.paymentTermsDays || 30} Days)
-              </Text>
+              <Text style={styles.paymentName}>Online Payment (Razorpay)</Text>
               <Text style={styles.paymentSub}>
-                Available Credit: {formatPaiseToINR(availableCreditPaise)}
+                Instant Settlement • UPI (GPay, PhonePe, Paytm), Cards, Netbanking & Wallets
               </Text>
             </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentOption,
-              paymentMethod === PaymentMethod.BANK_TRANSFER && styles.selectedPaymentOption,
-            ]}
-            onPress={() => setPaymentMethod(PaymentMethod.BANK_TRANSFER)}
-          >
-            <View style={styles.radioDot}>
-              {paymentMethod === PaymentMethod.BANK_TRANSFER && <View style={styles.radioInner} />}
-            </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.paymentName}>Direct Bank Transfer (RTGS / NEFT / IMPS)</Text>
-              <Text style={styles.paymentSub}>Necessity India Pvt. Ltd. Official Virtual Account</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentOption,
-              paymentMethod === PaymentMethod.UPI && styles.selectedPaymentOption,
-            ]}
-            onPress={() => setPaymentMethod(PaymentMethod.UPI)}
-          >
-            <View style={styles.radioDot}>
-              {paymentMethod === PaymentMethod.UPI && <View style={styles.radioInner} />}
-            </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.paymentName}>Corporate UPI</Text>
-              <Text style={styles.paymentSub}>Instant QR / VPA payment verification</Text>
-            </View>
-          </TouchableOpacity>
-
-          {!hasSufficientCredit && (
-            <View style={styles.creditWarning}>
-              <Text style={styles.creditWarningText}>
-                ⚠️ Your available credit limit is insufficient for this order. Please select Bank Transfer or request a credit increase.
-              </Text>
-            </View>
-          )}
+          </View>
         </View>
 
         {/* Instructions */}
@@ -496,15 +486,15 @@ export const CheckoutScreen: React.FC = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.confirmBtn, (isSubmitting || !hasSufficientCredit) && styles.disabledBtn]}
+          style={[styles.confirmBtn, isSubmitting && styles.disabledBtn]}
           onPress={handlePlaceOrder}
-          disabled={isSubmitting || !hasSufficientCredit}
+          disabled={isSubmitting}
           activeOpacity={0.85}
         >
           {isSubmitting ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.confirmBtnText}>Confirm Order</Text>
+            <Text style={styles.confirmBtnText}>Confirm & Pay with Razorpay</Text>
           )}
         </TouchableOpacity>
       </View>

@@ -336,8 +336,9 @@ export const CategoriesBrandsScreen: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#F0E0D5]">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#292929] tracking-tight">
+        <div className="hidden lg:block">
+          <h1 className="text-2xl font-black text-[#292929] tracking-tight flex items-center gap-2">
+            <FolderTree className="h-7 w-7 text-[#F47732]" />
             Categories & Brands
           </h1>
           <p className="text-sm text-[#737373] mt-1">

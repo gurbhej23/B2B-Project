@@ -8,6 +8,7 @@ import {
   retailerApprovalSchema,
   updateCustomerTypeSchema,
   updateCustomerStatusSchema,
+  updateCustomerDetailsSchema,
 } from '@necessity/shared';
 
 export const retailerRouter = Router();
@@ -67,6 +68,14 @@ retailerRouter.patch(
   requireRole(...adminStaffRoles),
   validateBody(updateCustomerStatusSchema),
   RetailerController.updateStatus
+);
+
+// Update Customer Profile Details (Admin / Super Admin only)
+retailerRouter.patch(
+  '/:id',
+  requireRole(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  validateBody(updateCustomerDetailsSchema),
+  RetailerController.updateCustomerDetails
 );
 
 // Delete or Archive Customer Account (Safely archives if order/invoice history exists)

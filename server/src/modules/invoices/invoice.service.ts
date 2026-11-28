@@ -9,6 +9,7 @@ import { zohoService } from '../integrations/zoho/zoho.service';
 import { InvoicePdfGenerator } from './pdf-generator.service';
 import { auditLogger } from '../audit/audit.service';
 import { ApiError } from '../../utils/api-error';
+import { escapeRegex } from '../../utils/security';
 import { logger } from '../../config/logger';
 import {
   InvoiceStatus,
@@ -97,7 +98,7 @@ export class InvoiceService {
     }
 
     if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = new RegExp(escapeRegex(search.trim()), 'i');
       andConditions.push({
         $or: [
           { invoiceNumber: regex },

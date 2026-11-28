@@ -25,6 +25,7 @@ import {
   TrendingDown,
   ShoppingCart,
   Gift,
+  BadgePercent,
 } from 'lucide-react';
 import { DiscountType, DiscountScope, CustomerType, formatPaiseToINR } from '@necessity/shared';
 
@@ -561,15 +562,17 @@ export const DiscountsCouponsScreen: React.FC = () => {
     <>
       <div className="space-y-6">
         {/* Top Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1e293b]">Discounts & Coupons</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+        <div className="hidden lg:block">
+          <h1 className="text-2xl font-bold text-[#292929] tracking-tight flex items-center gap-2">
+            <BadgePercent className="h-6 w-6 text-[#F47732]" />
+            Discounts & Coupons</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 pb-3 border-b border-[#F0E0D5]">
             Create automatic discounts and shareable coupon codes for your customers.
           </p>
         </div>
 
         {/* 4 Metric KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
           {/* Card 1: Active Discounts */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex items-center space-x-4">
             <div className="w-12 h-12 rounded-xl bg-[#FFF8F3] border border-[#F0E0D5] flex items-center justify-center text-[#F47732] shrink-0">
@@ -1252,15 +1255,13 @@ export const DiscountsCouponsScreen: React.FC = () => {
                   role="switch"
                   aria-checked={pIsActive}
                   onClick={() => setPIsActive(!pIsActive)}
-                  className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#F47732] focus:ring-offset-1 ${
-                    pIsActive ? 'bg-[#F47732]' : 'bg-slate-300'
-                  }`}
+                  className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#F47732] focus:ring-offset-1 ${pIsActive ? 'bg-[#F47732]' : 'bg-slate-300'
+                    }`}
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${
-                      pIsActive ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${pIsActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -1497,15 +1498,13 @@ export const DiscountsCouponsScreen: React.FC = () => {
                   role="switch"
                   aria-checked={cIsActive}
                   onClick={() => setCIsActive(!cIsActive)}
-                  className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#F47732] focus:ring-offset-1 ${
-                    cIsActive ? 'bg-[#F47732]' : 'bg-slate-300'
-                  }`}
+                  className={`relative inline-block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#F47732] focus:ring-offset-1 ${cIsActive ? 'bg-[#F47732]' : 'bg-slate-300'
+                    }`}
                 >
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${
-                      cIsActive ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none absolute top-0.5 left-0.5 inline-flex h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${cIsActive ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>

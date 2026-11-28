@@ -694,7 +694,7 @@ export const PricingOffersScreen: React.FC = () => {
 
           {/* EDIT PRICING & OFFERS MODAL */}
           {editingProduct && (
-            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center !m-0">
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 !m-0">
               <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden border border-[#F0E0D5] my-8">
                 <div className="bg-[#FFF8F3] border-b border-[#F0E0D5] p-5 flex items-center justify-between">
                   <div>
@@ -1110,7 +1110,7 @@ export const PricingOffersScreen: React.FC = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-white border border-[#F0E0D5] rounded-xl p-3 flex flex-wrap items-center gap-3 text-xs">
+            <div className="bg-white border border-[#F0E0D5] rounded-xl p-3 flex flex-wrap items-center gap-3 text-xs relative z-30">
               <div className="flex items-center gap-2">
                 <span className="text-[#737373] font-semibold whitespace-nowrap">Filter by Group:</span>
                 <div className="w-48">
