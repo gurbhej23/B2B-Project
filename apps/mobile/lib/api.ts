@@ -7,8 +7,9 @@ const DEFAULT_LAN_API = 'http://192.168.31.21:5000/api/v1';
 
 let currentBaseUrl: string = (() => {
   try {
-    if (typeof process !== 'undefined' && process?.env?.API_URL) {
-      return process.env.API_URL;
+    if (typeof process !== 'undefined') {
+      if (process?.env?.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+      if (process?.env?.API_URL) return process.env.API_URL;
     }
   } catch {
     // ignore env access error
