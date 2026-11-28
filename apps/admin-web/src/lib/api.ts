@@ -9,21 +9,29 @@ const getNormalizedBaseUrl = (): string => {
 
 export const API_BASE_URL = getNormalizedBaseUrl();
 
+const initialToken = typeof window !== 'undefined' ? localStorage.getItem('necessity_token') : null;
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    ...(initialToken ? { Authorization: `Bearer ${initialToken}` } : {}),
   },
 });
 
 export const apiClient = api;
 
-// Request interceptor to attach Bearer token (vital for cross-origin hosting e.g. Vercel -> Render)
+// Request interceptor to ensure Bearer token is attached using AxiosHeaders API
 api.interceptors.request.use((config) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('necessity_token') : null;
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers = config.headers || {};
+      (config.headers as any)['Authorization'] = `Bearer ${token}`;
+    }
   }
   return config;
 });
@@ -43,17 +51,41 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const refreshRes = await api.post('/auth/refresh-token');
+        const storedRefreshToken =
+          typeof window !== 'undefined' ? localStorage.getItem('necessity_refresh_token') : null;
+
+        const refreshRes = await api.post('/auth/refresh-token', {
+          refreshToken: storedRefreshToken,
+        });
+
         const newToken = refreshRes.data?.data?.accessToken;
-        if (newToken && typeof window !== 'undefined') {
-          localStorage.setItem('necessity_token', newToken);
-          originalRequest.headers = originalRequest.headers || {};
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        const newRefreshToken = refreshRes.data?.data?.refreshToken;
+
+        if (typeof window !== 'undefined') {
+          if (newToken) {
+            localStorage.setItem('necessity_token', newToken);
+            api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+          }
+          if (newRefreshToken) {
+            localStorage.setItem('necessity_refresh_token', newRefreshToken);
+          }
         }
+
+        if (newToken) {
+          if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
+          } else {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          }
+        }
+
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('necessity_token');
+          localStorage.removeItem('necessity_refresh_token');
+          delete api.defaults.headers.common['Authorization'];
         }
         return Promise.reject(refreshError);
       }

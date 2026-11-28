@@ -89,8 +89,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       rememberMe,
     });
     if (res.data?.success) {
-      if (res.data.data?.tokens?.accessToken) {
-        localStorage.setItem('necessity_token', res.data.data.tokens.accessToken);
+      const accessToken = res.data.data?.tokens?.accessToken;
+      const refreshToken = res.data.data?.tokens?.refreshToken;
+      if (accessToken) {
+        localStorage.setItem('necessity_token', accessToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      }
+      if (refreshToken) {
+        localStorage.setItem('necessity_refresh_token', refreshToken);
       }
       setUser(res.data.data.user);
       setRetailer(res.data.data.retailer || null);
@@ -109,6 +115,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await api.post('/auth/logout');
     } finally {
       localStorage.removeItem('necessity_token');
+      localStorage.removeItem('necessity_refresh_token');
+      delete api.defaults.headers.common['Authorization'];
       setUser(null);
       setRetailer(null);
     }

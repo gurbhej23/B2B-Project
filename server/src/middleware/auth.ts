@@ -19,13 +19,13 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
   try {
     let token: string | undefined;
 
-    // 1. Check HttpOnly cookie first (Web)
-    if (req.cookies && req.cookies[AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME]) {
-      token = req.cookies[AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME];
-    }
-    // 2. Check Authorization header (Bearer token for Mobile / API clients)
-    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    // 1. Check Authorization header first (modern SPA & mobile Bearer token)
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
+    }
+    // 2. Check HttpOnly cookie (fallback for same-site Web)
+    else if (req.cookies && req.cookies[AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME]) {
+      token = req.cookies[AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME];
     }
 
     if (!token) {
