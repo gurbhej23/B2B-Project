@@ -3,7 +3,7 @@ import { SecureSession } from './secure-store';
 
 declare const process: any;
 
-const DEFAULT_LAN_API = 'http://192.168.31.21:5000/api/v1';
+const DEFAULT_LAN_API = 'https://b2b-project-ikc4.onrender.com/api/v1';
 
 let currentBaseUrl: string = (() => {
   try {

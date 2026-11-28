@@ -5,7 +5,8 @@
   "scripts": {
     "start": "react-native start",
     "android": "cmd /c \"set GRADLE_USER_HOME=D:\\.gradle&& react-native run-android\"",
-    "build:android": "cmd /c \"set GRADLE_USER_HOME=D:\\.gradle&& cd android && gradlew.bat assembleDebug\"",
+    "bundle:android": "npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/",
+    "build:android": "pnpm bundle:android && cmd /c \"set GRADLE_USER_HOME=D:\\.gradle&& cd android && gradlew.bat assembleDebug\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
