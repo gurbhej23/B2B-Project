@@ -42,14 +42,14 @@ export class AuthController {
       res.cookie(AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME, result.tokens.accessToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 15 * 60 * 1000, // 15 mins
       });
 
       res.cookie(AUTH_SETTINGS.REFRESH_TOKEN_COOKIE_NAME, result.tokens.refreshToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
       });
 
@@ -70,14 +70,14 @@ export class AuthController {
       res.cookie(AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME, newTokens.accessToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie(AUTH_SETTINGS.REFRESH_TOKEN_COOKIE_NAME, newTokens.refreshToken, {
         httpOnly: true,
         secure: isProd,
-        sameSite: 'lax',
+        sameSite: isProd ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -93,8 +93,17 @@ export class AuthController {
         await AuthService.logout(req.user._id.toString());
       }
 
-      res.clearCookie(AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME);
-      res.clearCookie(AUTH_SETTINGS.REFRESH_TOKEN_COOKIE_NAME);
+      const isProd = ENV.NODE_ENV === 'production';
+      res.clearCookie(AUTH_SETTINGS.ACCESS_TOKEN_COOKIE_NAME, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+      });
+      res.clearCookie(AUTH_SETTINGS.REFRESH_TOKEN_COOKIE_NAME, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+      });
 
       sendSuccess(res, { loggedOut: true }, 'Signed out successfully');
     } catch (error) {

@@ -26,6 +26,9 @@ import { AppError } from './utils/errors';
 export function createApp(): express.Application {
   const app = express();
 
+  // Trust reverse proxy (Render, Cloudflare, etc.) to allow correct IP resolution and rate-limiting
+  app.set('trust proxy', 1);
+
   // Security Headers
   app.use(
     helmet({

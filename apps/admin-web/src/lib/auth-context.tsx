@@ -89,6 +89,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       rememberMe,
     });
     if (res.data?.success) {
+      if (res.data.data?.tokens?.accessToken) {
+        localStorage.setItem('necessity_token', res.data.data.tokens.accessToken);
+      }
       setUser(res.data.data.user);
       setRetailer(res.data.data.retailer || null);
       return res.data.data;
@@ -105,6 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await api.post('/auth/logout');
     } finally {
+      localStorage.removeItem('necessity_token');
       setUser(null);
       setRetailer(null);
     }

@@ -19,6 +19,15 @@ export const api = axios.create({
 
 export const apiClient = api;
 
+// Request interceptor to attach Bearer token (vital for cross-origin hosting e.g. Vercel -> Render)
+api.interceptors.request.use((config) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('necessity_token') : null;
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Response interceptor for handling session expiration and refreshing
 api.interceptors.response.use(
   (response) => response,
@@ -34,10 +43,18 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        await api.post('/auth/refresh-token');
+        const refreshRes = await api.post('/auth/refresh-token');
+        const newToken = refreshRes.data?.data?.accessToken;
+        if (newToken && typeof window !== 'undefined') {
+          localStorage.setItem('necessity_token', newToken);
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh token also failed or expired, let the app redirect to /login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('necessity_token');
+        }
         return Promise.reject(refreshError);
       }
     }
