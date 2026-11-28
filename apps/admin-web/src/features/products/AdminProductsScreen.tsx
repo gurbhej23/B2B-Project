@@ -282,8 +282,8 @@ export const AdminProductsScreen: React.FC = () => {
             <Package className="h-6 w-6 text-[#F47732]" />
             Products & Stock Catalogue
           </h1>
-          <span className="text-sm text-[#292929]">
-            Manage products, monitor stock levels, and keep your product catalogue organized in one place.</span>
+          <p className="text-sm text-[#292929]">
+            Manage products, monitor stock levels, and keep your product catalogue organized in one place.</p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">

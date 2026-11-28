@@ -34,18 +34,20 @@ export function createApp(): express.Application {
   );
 
   // CORS Configuration: Enforce explicit allowlist and reject unauthorized browser origins
-  const allowedOrigins: string[] = Array.isArray(ENV.CORS_ALLOWED_ORIGINS)
-    ? ENV.CORS_ALLOWED_ORIGINS
-    : [
-        ENV.CLIENT_WEB_URL,
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-        'http://localhost:8081',
-        'http://127.0.0.1:8081',
-        'http://192.168.31.21:8081',
-        'http://192.168.31.21:5173',
-      ];
+  const allowedOrigins: string[] = [
+    ENV.CLIENT_WEB_URL,
+    ...(Array.isArray(ENV.CORS_ALLOWED_ORIGINS) ? ENV.CORS_ALLOWED_ORIGINS : []),
+    'https://b2-b-project-seven.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://localhost:8081',
+    'http://127.0.0.1:8081',
+    'http://192.168.31.21:8081',
+    'http://192.168.31.21:5173',
+  ]
+    .map((s) => s?.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
 
   app.use(
     cors({
@@ -55,7 +57,13 @@ export function createApp(): express.Application {
           return callback(null, true);
         }
 
-        if (allowedOrigins.includes(origin)) {
+        const normalizedOrigin = origin.replace(/\/+$/, '');
+        if (
+          allowedOrigins.includes(normalizedOrigin) ||
+          normalizedOrigin.endsWith('.vercel.app') ||
+          normalizedOrigin.includes('localhost') ||
+          normalizedOrigin.includes('127.0.0.1')
+        ) {
           return callback(null, true);
         }
 

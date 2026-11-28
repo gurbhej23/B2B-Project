@@ -262,8 +262,8 @@ export const AdminDashboard: React.FC = () => {
               <UserRoundCheck className="h-6 w-6 text-[#F47732]" />
               Welcome back, Admin
             </h1>
-            <span className="text-sm text-[#292929]">
-              Monitor orders, approvals, and inventory performance.</span>
+            <p className="text-sm text-[#292929]">
+              Monitor orders, approvals, and inventory performance.</p>
           </div>
         </div>
       </div>
