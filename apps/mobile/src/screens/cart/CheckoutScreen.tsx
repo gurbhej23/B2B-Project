@@ -132,6 +132,10 @@ export const CheckoutScreen: React.FC = () => {
             if (intentRes.success && intentRes.data) {
               const { keyId, providerOrderId, amountPaise } = intentRes.data;
 
+              if (!keyId || !providerOrderId) {
+                throw new Error('Razorpay Gateway is not configured on the server. Missing Key ID or Order ID.');
+              }
+
               const cleanContact = (user?.phone || '').replace(/\D/g, '').slice(-10);
 
               const options = {

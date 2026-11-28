@@ -36,9 +36,9 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().min(16).default('necessity_secure_cookie_secret_salt_2026!'),
 
   PAYMENT_PROVIDER: z.enum(['razorpay', 'bank_transfer', 'mock_gateway']).default('razorpay'),
-  RAZORPAY_KEY_ID: z.string().default(''),
-  RAZORPAY_KEY_SECRET: z.string().default(''),
-  RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
+  RAZORPAY_KEY_ID: z.string().default('rzp_test_SXUfbjxip94Wxf'),
+  RAZORPAY_KEY_SECRET: z.string().default('SMFjzK6DklpXSJFSu3zSGYVy'),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default('B@Ur55hqwsw_E38'),
 
   COMPANY_NAME: z.string().default('NECESSITY INDIA PRIVATE LIMITED'),
   COMPANY_ADDRESS: z.string().default('D-182 1ST FLOOR PHASE 8 B, MOHALI, PUNJAB'),

@@ -14,6 +14,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
 import { useAuth } from '../../context/AuthContext';
@@ -306,142 +307,161 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   // POST SUBMISSION SCREEN
   if (isSubmittedSuccessfully) {
     return (
-      <View style={styles.successScreenContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
-        <ScrollView contentContainerStyle={styles.successScrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.successBadgeCircle}>
-            <Text style={styles.successBadgeEmoji}>✓</Text>
-          </View>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={styles.successScreenContainer}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+          <ScrollView contentContainerStyle={styles.successScrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.successBadgeCircle}>
+              <Text style={styles.successBadgeEmoji}>✓</Text>
+            </View>
 
-          <Text style={styles.successTitle}>Registration Submitted</Text>
-          <Text style={styles.successSub}>
-            Your wholesale customer onboarding application has been registered with Necessity India.
-          </Text>
+            <Text style={styles.successTitle}>Registration Submitted</Text>
+            <Text style={styles.successSub}>
+              Your wholesale customer onboarding application has been registered with Necessity India.
+            </Text>
 
-          {/* Reference Details Box */}
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Application Reference</Text>
-              <Text style={styles.summaryValueHighlight}>{submittedData?.referenceId}</Text>
+            {/* Reference Details Box */}
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Application Reference</Text>
+                <Text style={styles.summaryValueHighlight}>{submittedData?.referenceId}</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Business Firm</Text>
+                <Text style={styles.summaryValue}>{submittedData?.businessName}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Primary Contact</Text>
+                <Text style={styles.summaryValue}>{submittedData?.name}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Registered Email</Text>
+                <Text style={styles.summaryValue}>{submittedData?.email}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Mobile</Text>
+                <Text style={styles.summaryValue}>+91 {submittedData?.phone}</Text>
+              </View>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Business Firm</Text>
-              <Text style={styles.summaryValue}>{submittedData?.businessName}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Primary Contact</Text>
-              <Text style={styles.summaryValue}>{submittedData?.name}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Registered Email</Text>
-              <Text style={styles.summaryValue}>{submittedData?.email}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Mobile</Text>
-              <Text style={styles.summaryValue}>+91 {submittedData?.phone}</Text>
-            </View>
-          </View>
 
-          {/* Verification Notice */}
-          <View style={styles.verificationNoticeBox}>
-            <Text style={styles.noticeIcon}>🛡️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.noticeTitle}>Institutional Security Verification</Text>
-              <Text style={styles.noticeBody}>
-                To protect wholesale prices and trade margins, every new customer account is verified by our compliance team before unlocking institutional catalogs and credit lines.
-              </Text>
+            {/* Verification Notice */}
+            <View style={styles.verificationNoticeBox}>
+              <Text style={styles.noticeIcon}>🛡️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.noticeTitle}>Institutional Security Verification</Text>
+                <Text style={styles.noticeBody}>
+                  To protect wholesale prices and trade margins, every new customer account is verified by our compliance team before unlocking institutional catalogs and credit lines.
+                </Text>
+              </View>
             </View>
-          </View>
 
-          {/* Action Buttons */}
-          <TouchableOpacity
-            style={styles.checkStatusSuccessBtn}
-            onPress={handleCheckLiveStatus}
-            disabled={isCheckingApproval}
-            activeOpacity={0.85}
-          >
-            {isCheckingApproval ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.checkStatusSuccessBtnText}>Check Approval Status Now</Text>
-            )}
-          </TouchableOpacity>
+            {/* Action Buttons */}
+            <TouchableOpacity
+              style={styles.checkStatusSuccessBtn}
+              onPress={handleCheckLiveStatus}
+              disabled={isCheckingApproval}
+              activeOpacity={0.85}
+            >
+              {isCheckingApproval ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.checkStatusSuccessBtnText}>Check Approval Status Now</Text>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.backToLoginBtn}
-            onPress={() => navigation.navigate('Login')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.backToLoginBtnText}>Back to Sign In</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
+            <TouchableOpacity
+              style={styles.backToLoginBtn}
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.backToLoginBtnText}>Back to Sign In</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // MULTI-STEP WIZARD (Steps 1 to 5)
+  // MULTI-STEP WIZARD (Steps 1 to 4)
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardView}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
-
-      {/* Fixed Sticky Header with Progress Bar */}
-      <View style={styles.wizardHeader}>
-        <View style={styles.wizardHeaderTop}>
-          <TouchableOpacity
-            onPress={currentStep === 1 ? () => navigation.goBack() : handlePrevStep}
-            style={styles.headerBackBtn}
-          >
-            <Text style={styles.headerBackIcon}>←</Text>
-          </TouchableOpacity>
-          <View style={styles.wizardTitleBox}>
-            <Text style={styles.wizardStepText}>Step {currentStep} of 4</Text>
-            <Text style={styles.wizardHeaderTitle}>
-              {currentStep === 1 && 'Account Credentials'}
-              {currentStep === 2 && 'Business Details'}
-              {currentStep === 3 && 'Premises Address'}
-              {currentStep === 4 && 'Review & Submit'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Login')}
-            style={styles.headerLoginShortcut}
-          >
-            <Text style={styles.headerLoginShortcutText}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 4-Segment Progress Bar */}
-        <View style={styles.stepProgressBar}>
-          {[1, 2, 3, 4].map((step) => (
-            <View
-              key={`step-bar-${step}`}
-              style={[
-                styles.stepSegment,
-                currentStep >= step && styles.stepSegmentActive,
-                currentStep === step && styles.stepSegmentCurrent,
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* Step Indicator Labels */}
-        <View style={styles.stepLabelsRow}>
-          <Text style={[styles.stepLabelItem, currentStep === 1 && styles.stepLabelItemActive]}>Account</Text>
-          <Text style={[styles.stepLabelItem, currentStep === 2 && styles.stepLabelItemActive]}>Business</Text>
-          <Text style={[styles.stepLabelItem, currentStep === 3 && styles.stepLabelItemActive]}>Address</Text>
-          <Text style={[styles.stepLabelItem, currentStep === 4 && styles.stepLabelItemActive]}>Review</Text>
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+
+        {/* Fixed Sticky Header with Progress Bar */}
+        <View style={styles.wizardHeader}>
+          <View style={styles.wizardHeaderTop}>
+            <TouchableOpacity
+              onPress={currentStep === 1 ? () => navigation.goBack() : handlePrevStep}
+              style={styles.headerBackBtn}
+            >
+              <Text style={styles.headerBackIcon}>←</Text>
+            </TouchableOpacity>
+            <View style={styles.wizardTitleBox}>
+              <Text style={styles.wizardStepText}>Step {currentStep} of 4</Text>
+              <Text style={styles.wizardHeaderTitle}>
+                {currentStep === 1 && 'Account Credentials'}
+                {currentStep === 2 && 'Business Details'}
+                {currentStep === 3 && 'Premises Address'}
+                {currentStep === 4 && 'Review & Submit'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.headerLoginShortcut}
+            >
+              <Text style={styles.headerLoginShortcutText}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 4-Segment Progress Bar */}
+          <View style={styles.stepProgressBar}>
+            {[1, 2, 3, 4].map((step) => (
+              <View
+                key={`step-bar-${step}`}
+                style={[
+                  styles.stepSegment,
+                  currentStep >= step && styles.stepSegmentActive,
+                  currentStep === step && styles.stepSegmentCurrent,
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Fully Responsive Step Indicator Labels */}
+          <View style={styles.stepLabelsRow}>
+            {[
+              { id: 1, label: 'Account' },
+              { id: 2, label: 'Business' },
+              { id: 3, label: 'Address' },
+              { id: 4, label: 'Review' },
+            ].map((item) => (
+              <View key={item.id} style={styles.stepLabelCol}>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                  style={[
+                    styles.stepLabelItem,
+                    currentStep === item.id && styles.stepLabelItemActive,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         {/* Error Notification */}
         {errorMessage && (
           <View style={styles.errorBox}>
@@ -865,32 +885,37 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
   keyboardView: {
     flex: 1,
     backgroundColor: colors.white,
   },
   wizardHeader: {
     backgroundColor: colors.white,
-    paddingTop: Platform.OS === 'ios' ? 48 : 16,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 8 : 12,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F0E0D5',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 4,
+    shadowRadius: 3,
     elevation: 2,
   },
   wizardHeaderTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   headerBackBtn: {
     padding: 6,
@@ -934,6 +959,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     borderRadius: 2,
     overflow: 'hidden',
+    width: '100%',
   },
   stepSegment: {
     flex: 1,
@@ -949,23 +975,29 @@ const styles = StyleSheet.create({
   },
   stepLabelsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 6,
+    width: '100%',
+  },
+  stepLabelCol: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
   },
   stepLabelItem: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: colors.slate400,
+    textAlign: 'center',
   },
   stepLabelItemActive: {
     color: colors.primary,
     fontWeight: '800',
   },
   scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
   },
   stepContent: {
     width: '100%',
@@ -1326,7 +1358,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 24,
+    marginTop: 20,
+    marginBottom: 12,
   },
   backStepBtn: {
     height: 50,
