@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiClient } from '../../lib/api';
+import { apiClient, getMediaUrl } from '../../lib/api';
 import { CustomSelect } from '../../components/ui';
 import {
   Boxes,
@@ -297,9 +297,19 @@ export const StockManagementScreen: React.FC = () => {
                       {/* Products */}
                       <td className="py-3.5 px-4 text-left">
                         <div className="flex items-center justify-start gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center text-center">
+                          <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center text-center relative">
                             {primaryImg ? (
-                              <img src={primaryImg} alt={p.name} className="h-full w-full object-cover" />
+                              <>
+                                <img
+                                  src={getMediaUrl(primaryImg)}
+                                  alt={p.name}
+                                  className="h-full w-full object-cover z-10"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                                <Package className="h-5 w-5 text-slate-400 absolute inset-0 m-auto z-0" />
+                              </>
                             ) : (
                               <Package className="h-5 w-5 text-slate-400 mx-auto" />
                             )}

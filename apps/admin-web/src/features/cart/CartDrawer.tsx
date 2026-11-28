@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../../lib/cart-context';
 import { useAuth } from '../../lib/auth-context';
-import { apiClient } from '../../lib/api';
+import { apiClient, getMediaUrl } from '../../lib/api';
 import {
   X,
   Trash2,
@@ -171,11 +171,15 @@ export const CartDrawer: React.FC = () => {
                       <div key={product.id} className="py-3 flex space-x-3">
                         <img
                           src={
-                            product.images?.[0]?.url ||
+                            getMediaUrl(product.images?.[0]?.url) ||
                             'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&auto=format&fit=crop'
                           }
                           alt={product.name}
                           className="w-16 h-16 rounded-lg object-cover bg-white border border-[#F0E0D5] flex-shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&auto=format&fit=crop';
+                          }}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">

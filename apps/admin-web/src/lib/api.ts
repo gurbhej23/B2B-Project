@@ -9,6 +9,19 @@ const getNormalizedBaseUrl = (): string => {
 
 export const API_BASE_URL = getNormalizedBaseUrl();
 
+export function getMediaUrl(url?: string): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+    const host = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${host}${cleanPath}`;
+  }
+  return url;
+}
+
 const initialToken = typeof window !== 'undefined' ? localStorage.getItem('necessity_token') : null;
 
 export const api = axios.create({

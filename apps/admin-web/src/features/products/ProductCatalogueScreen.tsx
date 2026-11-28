@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../lib/api';
+import { apiClient, getMediaUrl } from '../../lib/api';
 import { useCart } from '../../lib/cart-context';
 import { useAuth } from '../../lib/auth-context';
 import { IProduct, formatPaiseToINR } from '@necessity/shared';
@@ -234,11 +234,15 @@ export const ProductCatalogueScreen: React.FC = () => {
                 <div className="relative h-48 bg-[#FFF8F3]/50 overflow-hidden">
                   <img
                     src={
-                      product.images?.[0]?.url ||
+                      getMediaUrl(product.images?.[0]?.url) ||
                       'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=600&auto=format&fit=crop'
                     }
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=600&auto=format&fit=crop';
+                    }}
                   />
                   {/* Category Pill */}
                   <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm text-[#292929] border border-[#F0E0D5] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">

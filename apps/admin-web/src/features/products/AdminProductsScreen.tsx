@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiClient } from '../../lib/api';
+import { apiClient, getMediaUrl } from '../../lib/api';
 import { IProduct, formatPaiseToINR } from '@necessity/shared';
 import { CustomSelect } from '../../components/ui';
 import {
@@ -623,9 +623,19 @@ export const AdminProductsScreen: React.FC = () => {
                       {/* Product Details */}
                       <td className="py-3 px-4 text-left">
                         <div className="flex items-center justify-start gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center text-center">
+                          <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center text-center relative">
                             {primaryImg ? (
-                              <img src={primaryImg} alt={product.name} className="h-full w-full object-cover" />
+                              <>
+                                <img
+                                  src={getMediaUrl(primaryImg)}
+                                  alt={product.name}
+                                  className="h-full w-full object-cover z-10"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                                <Package className="h-5 w-5 text-slate-400 absolute inset-0 m-auto z-0" />
+                              </>
                             ) : (
                               <Package className="h-5 w-5 text-slate-400 mx-auto" />
                             )}
@@ -827,9 +837,19 @@ export const AdminProductsScreen: React.FC = () => {
 
             <div className="space-y-4 text-xs">
               <div className="flex items-start gap-4">
-                <div className="h-20 w-20 rounded-xl bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                <div className="h-20 w-20 rounded-xl bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
                   {detailProduct.images?.[0]?.url ? (
-                    <img src={detailProduct.images[0].url} alt="" className="h-full w-full object-cover" />
+                    <>
+                      <img
+                        src={getMediaUrl(detailProduct.images[0].url)}
+                        alt=""
+                        className="h-full w-full object-cover z-10"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <Package className="h-8 w-8 text-slate-300 absolute inset-0 m-auto z-0" />
+                    </>
                   ) : (
                     <Package className="h-8 w-8 text-slate-300" />
                   )}
@@ -912,7 +932,14 @@ export const AdminProductsScreen: React.FC = () => {
                           key={i}
                           className="h-16 w-16 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 shrink-0 relative"
                         >
-                          <img src={img.url} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={getMediaUrl(img.url)}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                           {img.isPrimary && (
                             <span className="absolute bottom-0 inset-x-0 bg-[#F47732] text-white text-[8px] font-bold text-center py-0.5">
                               Cover

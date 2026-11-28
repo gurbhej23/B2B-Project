@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '../../lib/api';
+import { apiClient, getMediaUrl } from '../../lib/api';
 import { CustomSelect } from '../../components/ui';
 import {
   Package,
@@ -1425,7 +1425,7 @@ export const AddProductScreen: React.FC = () => {
                           >
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-slate-50 flex items-center justify-center">
                               <img
-                                src={img.url}
+                                src={getMediaUrl(img.url)}
                                 alt={img.altText || `Product Image ${idx + 1}`}
                                 className="h-full w-full object-cover"
                               />
