@@ -23,6 +23,13 @@ import {
   ArrowUpDown,
   ChevronRight,
   ChevronLeft,
+  UserCheck,
+  MapPin,
+  ShieldCheck,
+  FileText,
+  CreditCard,
+  Calendar,
+  Sliders,
 } from 'lucide-react';
 import {
   AccountStatus,
@@ -76,6 +83,8 @@ export const CustomerManagementScreen: React.FC = () => {
   const [approvalCustomerType, setApprovalCustomerType] = useState<CustomerType>(CustomerType.RETAILER);
   const [approvalPricingGroupId, setApprovalPricingGroupId] = useState('');
   const [approvalDiscountGroupId, setApprovalDiscountGroupId] = useState('');
+  const [approvalCreditLimit, setApprovalCreditLimit] = useState<string>('0');
+  const [approvalPaymentTerms, setApprovalPaymentTerms] = useState<number>(15);
   const [rejectionReason, setRejectionReason] = useState('');
   const [statusChangeReason, setStatusChangeReason] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
@@ -277,13 +286,35 @@ export const CustomerManagementScreen: React.FC = () => {
   };
 
   // Open Approve Modal
-  const openApprove = (cust: any) => {
+  const openApprove = async (cust: any) => {
     setSelectedCustomer(cust);
     setApprovalCustomerType(mapCustomerType(cust.requestedCustomerType || cust.customerType));
     setApprovalPricingGroupId(cust.pricingGroupId?._id || cust.pricingGroupId || '');
     setApprovalDiscountGroupId(cust.discountGroupId?._id || cust.discountGroupId || '');
+    setApprovalCreditLimit(cust.creditLimitPaise ? String(cust.creditLimitPaise / 100) : '0');
+    setApprovalPaymentTerms(cust.paymentTermsDays !== undefined ? cust.paymentTermsDays : 15);
     setIsApproveOpen(true);
     setActionNotice(null);
+
+    // Fetch full single customer record in background to ensure all nested address/business details are loaded
+    const targetId = cust.id || cust._id || cust.retailerId;
+    if (targetId) {
+      try {
+        const res = await api.get(`/customers/${targetId}`);
+        if (res.data?.data) {
+          const freshData = res.data.data;
+          setSelectedCustomer((prev: any) => ({ ...prev, ...freshData }));
+          if (freshData.creditLimitPaise !== undefined) {
+            setApprovalCreditLimit(String(freshData.creditLimitPaise / 100));
+          }
+          if (freshData.paymentTermsDays !== undefined) {
+            setApprovalPaymentTerms(freshData.paymentTermsDays);
+          }
+        }
+      } catch (e) {
+        // Fallback to table data
+      }
+    }
   };
 
   // Open Reject Modal
@@ -353,13 +384,16 @@ export const CustomerManagementScreen: React.FC = () => {
     setIsSubmitting(true);
     setActionNotice(null);
 
+    const limitRupees = parseFloat(approvalCreditLimit) || 0;
+    const creditLimitPaise = Math.max(0, Math.round(limitRupees * 100));
+
     try {
-      const res = await api.patch(`/customers/${selectedCustomer.id || selectedCustomer.retailerId}/approve`, {
+      const res = await api.patch(`/customers/${selectedCustomer.id || selectedCustomer._id || selectedCustomer.retailerId}/approve`, {
         customerType: approvalCustomerType,
         pricingGroupId: approvalPricingGroupId || undefined,
         discountGroupId: approvalDiscountGroupId || undefined,
-        creditLimitPaise: 0,
-        paymentTermsDays: 0,
+        creditLimitPaise,
+        paymentTermsDays: approvalPaymentTerms || 15,
         creditStatus: CreditStatus.NORMAL,
       });
 
@@ -1485,7 +1519,8 @@ export const CustomerManagementScreen: React.FC = () => {
       <Modal
         isOpen={isApproveOpen && !!selectedCustomer}
         onClose={() => setIsApproveOpen(false)}
-        title={`Approve Wholesale Account: ${selectedCustomer?.businessName || ''}`}
+        title={`Review & Approve Customer: ${selectedCustomer?.businessName || ''}`}
+        maxWidthClass="max-w-4xl"
       >
         <div className="space-y-4 text-xs">
           {actionNotice ? (
@@ -1501,64 +1536,317 @@ export const CustomerManagementScreen: React.FC = () => {
             </div>
           ) : null}
 
-          <p className="text-slate-600 text-sm">
-            Approving will activate this customer account and trigger an automated B2B approval notification email.
-          </p>
-
-          {/* Pricing Group & Discount Group Assignment */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Subtitle / Context Banner */}
+          <div className="bg-[#FFF8F3] border border-[#F0E0D5] p-3 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Assigned Pricing Group
-              </label>
-              <CustomSelect
-                value={approvalPricingGroupId}
-                onChange={(val) => setApprovalPricingGroupId(val)}
-                options={[
-                  { value: '', label: `Default (${approvalCustomerType} base pricing)` },
-                  ...pricingGroups.map((pg: any) => ({
-                    value: pg.id || pg._id,
-                    label: `${pg.name} ${pg.isDefault ? '(Default Group)' : ''}`,
-                  })),
-                ]}
-              />
+              <p className="text-slate-800 font-semibold text-xs">
+                Wholesale Customer Onboarding Application Review
+              </p>
+              <p className="text-slate-500 text-[11px] mt-0.5">
+                Review all submitted registration credentials before activating wholesale catalog access and trade pricing.
+              </p>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Assigned Discount Group
-              </label>
-              <CustomSelect
-                value={approvalDiscountGroupId}
-                onChange={(val) => setApprovalDiscountGroupId(val)}
-                options={[
-                  { value: '', label: `Default (${approvalCustomerType} standard discounts)` },
-                  ...discountGroups.map((dg: any) => ({
-                    value: dg.id || dg._id,
-                    label: `${dg.name} ${dg.defaultDiscountPercent ? `(${dg.defaultDiscountPercent}% Base)` : ''}`,
-                  })),
-                ]}
-              />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-[11px] text-slate-500 font-medium">Ref:</span>
+              <span className="font-mono text-[11px] font-bold text-[#F47732] bg-white px-2 py-0.5 rounded border border-[#F0E0D5]">
+                {selectedCustomer?.retailerId || selectedCustomer?.id || selectedCustomer?._id || 'N/A'}
+              </span>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#F0E0D5] flex justify-end gap-2">
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => setIsApproveOpen(false)}
-              className="px-4 py-2 border border-[#F0E0D5] text-[#292929] hover:bg-[#FFF8F3] rounded-lg font-semibold text-xs transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={handleApproveSubmit}
-              className="px-4 py-2 bg-[#F47732] hover:bg-[#E95B2A] text-white rounded-lg font-bold shadow-xs text-xs flex items-center gap-1.5 transition-colors"
-            >
-              {isSubmitting ? 'Approving & Sending Email...' : 'Confirm Approval & Send Notification'}
-            </button>
+          {/* =================================================================== */}
+          {/* COMPLETE READ-ONLY CUSTOMER REGISTRATION DETAILS (STEPS 1 TO 4) */}
+          {/* =================================================================== */}
+          <div className="border border-[#F0E0D5] rounded-xl overflow-hidden bg-white shadow-xs divide-y divide-[#F0E0D5]">
+            {/* STEP 1: ACCOUNT DETAILS */}
+            <div className="p-3.5 sm:p-4 bg-white">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs uppercase tracking-wider mb-2.5">
+                <UserCheck className="h-4 w-4 text-[#F47732]" />
+                <span>Step 1 – Account & Primary Contact</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Full Name (Authorized Person)</span>
+                  <span className="font-bold text-slate-900 text-xs mt-0.5 block">
+                    {selectedCustomer?.contactPerson || selectedCustomer?.name || 'N/A'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Business Email Address</span>
+                  <span className="font-bold text-slate-900 text-xs mt-0.5 block break-all">
+                    {selectedCustomer?.email || selectedCustomer?.userId?.email || 'N/A'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Mobile Number</span>
+                  <span className="font-bold text-slate-900 text-xs mt-0.5 block">
+                    +91 {selectedCustomer?.phone || selectedCustomer?.userId?.phone || 'N/A'}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Password credentials securely hashed with bcrypt (never exposed or rendered).</span>
+              </div>
+            </div>
+
+            {/* STEP 2: BUSINESS & TAX DETAILS */}
+            <div className="p-3.5 sm:p-4 bg-white">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs uppercase tracking-wider mb-2.5">
+                <Building2 className="h-4 w-4 text-[#F47732]" />
+                <span>Step 2 – Business Verification & Tax Details</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Registered Business Name</span>
+                  <span className="font-bold text-slate-900 text-xs mt-0.5 block">
+                    {selectedCustomer?.businessName || 'N/A'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Trade / Operating Name</span>
+                  <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
+                    {selectedCustomer?.tradeName || selectedCustomer?.businessName || 'N/A'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Business / Entity Type</span>
+                  <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
+                    {selectedCustomer?.businessType || 'Retailer'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">GSTIN Registration</span>
+                  {selectedCustomer?.gstin ? (
+                    <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5 text-xs">
+                      {selectedCustomer.gstin}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-slate-500 italic text-xs mt-0.5 block">
+                      Unregistered / Non-GST Entity
+                    </span>
+                  )}
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Business / Proprietor PAN</span>
+                  {selectedCustomer?.pan ? (
+                    <span className="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5 text-xs">
+                      {selectedCustomer.pan}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 text-xs mt-0.5 block">Not Provided</span>
+                  )}
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Requested Customer Tier</span>
+                  <span className="font-bold text-[#F47732] capitalize text-xs mt-0.5 block">
+                    {selectedCustomer?.requestedCustomerType || selectedCustomer?.customerType || 'Retailer'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* STEP 3: REGISTERED PREMISES & DELIVERY ADDRESSES */}
+            <div className="p-3.5 sm:p-4 bg-white">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs uppercase tracking-wider mb-2.5">
+                <MapPin className="h-4 w-4 text-[#F47732]" />
+                <span>Step 3 – Registered Premises & Delivery Addresses</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Billing & Registered Trade Office:
+                  </span>
+                  {selectedCustomer?.billingAddress ? (
+                    <p className="text-slate-800 text-xs leading-relaxed">
+                      <span className="font-medium block">{selectedCustomer.billingAddress.street}</span>
+                      <span>
+                        {selectedCustomer.billingAddress.city}, {selectedCustomer.billingAddress.state} -{' '}
+                        {selectedCustomer.billingAddress.pincode}
+                      </span>
+                      <span className="block text-slate-500 text-[11px] mt-0.5">
+                        State Code: {selectedCustomer.billingAddress.stateCode || '27'} (India)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-slate-400 text-xs italic">No billing address recorded.</p>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                    Delivery / Warehouse Destination:
+                  </span>
+                  {Array.isArray(selectedCustomer?.deliveryAddresses) && selectedCustomer.deliveryAddresses.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {selectedCustomer.deliveryAddresses.map((addr: any, idx: number) => (
+                        <p key={idx} className="text-slate-800 text-xs leading-relaxed">
+                          <span className="font-medium block">{addr.street}</span>
+                          <span>
+                            {addr.city}, {addr.state} - {addr.pincode}
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-600 text-xs leading-relaxed">
+                      <span>(Same as Registered Billing Address above)</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* STEP 4: ONBOARDING REVIEW & COMPLIANCE SUMMARY */}
+            <div className="p-3.5 sm:p-4 bg-white">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs uppercase tracking-wider mb-2.5">
+                <ShieldCheck className="h-4 w-4 text-[#F47732]" />
+                <span>Step 4 – Review, Compliance & Submission Details</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Application Date</span>
+                  <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
+                    {selectedCustomer?.createdAt ? new Date(selectedCustomer.createdAt).toLocaleString() : 'N/A'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Terms & Wholesale Policy</span>
+                  <span className="font-bold text-emerald-700 text-xs mt-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Accepted on Submission
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <span className="text-slate-400 block text-[11px] font-medium">Current Account Status</span>
+                  <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block mt-0.5 text-xs capitalize">
+                    {selectedCustomer?.accountStatus || 'Pending Approval'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* =================================================================== */}
+          {/* APPROVAL & TIER / PRICING / CREDIT ASSIGNMENT SECTION */}
+          {/* =================================================================== */}
+          <div className="bg-[#FFF8F3] border border-[#F0E0D5] rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-1.5 border-b border-[#F0E0D5] pb-2">
+              <Sliders className="h-4 w-4 text-[#F47732]" />
+              <h4 className="text-xs font-bold text-[#292929] uppercase tracking-wider">
+                Wholesale Account Configuration & Tier Assignment
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* 1. Customer Type */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Customer Type <span className="text-rose-500">*</span>
+                </label>
+                <CustomSelect
+                  value={approvalCustomerType}
+                  onChange={(val) => setApprovalCustomerType(val as CustomerType)}
+                  options={[
+                    { value: CustomerType.RETAILER, label: 'Retailer (Store / Shop)' },
+                    { value: CustomerType.WHOLESALER, label: 'Wholesaler (Bulk Buyer)' },
+                    { value: CustomerType.DISTRIBUTOR, label: 'Distributor (Regional)' },
+                  ]}
+                />
+              </div>
+
+              {/* 2. Assigned Pricing Group */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Pricing Group
+                </label>
+                <CustomSelect
+                  value={approvalPricingGroupId}
+                  onChange={(val) => setApprovalPricingGroupId(val)}
+                  options={[
+                    { value: '', label: `Default (${approvalCustomerType} base pricing)` },
+                    ...pricingGroups.map((pg: any) => ({
+                      value: pg.id || pg._id,
+                      label: `${pg.name} ${pg.isDefault ? '(Default)' : ''}`,
+                    })),
+                  ]}
+                />
+              </div>
+
+              {/* 3. Assigned Discount Group */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Discount Group
+                </label>
+                <CustomSelect
+                  value={approvalDiscountGroupId}
+                  onChange={(val) => setApprovalDiscountGroupId(val)}
+                  options={[
+                    { value: '', label: `Default (${approvalCustomerType} discounts)` },
+                    ...discountGroups.map((dg: any) => ({
+                      value: dg.id || dg._id,
+                      label: `${dg.name} ${dg.defaultDiscountPercent ? `(${dg.defaultDiscountPercent}%)` : ''}`,
+                    })),
+                  ]}
+                />
+              </div>
+
+              {/* 4. Credit Limit */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Credit Limit (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={approvalCreditLimit}
+                    onChange={(e) => setApprovalCreditLimit(e.target.value)}
+                    placeholder="0"
+                    className="w-full pl-7 pr-3 py-1.5 text-xs font-bold border border-[#F0E0D5] rounded-lg focus:ring-2 focus:ring-[#F47732] focus:border-[#F47732] bg-white"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">0 = Prepaid / Advance orders only</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Action Buttons */}
+          <div className="pt-3 border-t border-[#F0E0D5] flex items-center justify-between">
+            <p className="text-[11px] text-slate-500 hidden sm:block">
+              An automated approval notification email will be dispatched to{' '}
+              <span className="font-semibold text-slate-700">{selectedCustomer?.email || 'the customer'}</span>.
+            </p>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setIsApproveOpen(false)}
+                className="px-4 py-2 border border-[#F0E0D5] text-[#292929] hover:bg-[#FFF8F3] rounded-lg font-semibold text-xs transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleApproveSubmit}
+                className="px-4 py-2 bg-[#F47732] hover:bg-[#E95B2A] text-white rounded-lg font-bold shadow-xs text-xs flex items-center gap-1.5 transition-colors"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Approving & Sending Email...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Confirm Approval & Send Notification</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </Modal>

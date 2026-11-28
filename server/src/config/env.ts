@@ -67,9 +67,9 @@ const envSchema = z.object({
   SMTP_HOST: z.string().default(''),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_SECURE: z
-    .string()
+    .union([z.string(), z.boolean()])
     .optional()
-    .transform((val) => val === 'true'),
+    .transform((val) => val === true || val === 'true'),
   SMTP_USER: z.string().default(''),
   SMTP_PASS: z.string().default(''),
   SMTP_FROM: z.string().default('Necessity India Wholesale <orders@necessityindia.com>'),

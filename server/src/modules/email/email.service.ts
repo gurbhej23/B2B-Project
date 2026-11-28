@@ -100,6 +100,14 @@ export interface SendRejectionEmailParams {
   reason?: string;
 }
 
+export interface SendRegistrationConfirmationEmailParams {
+  to: string;
+  customerName: string;
+  businessName: string;
+  referenceNumber: string;
+  phone: string;
+}
+
 export interface EmailSendResult {
   success: boolean;
   messageId?: string;
@@ -129,18 +137,218 @@ export class EmailService {
     }
 
     if (!this.transporter) {
+      const port = Number(ENV.SMTP_PORT) || 587;
+      const isSecure = ENV.SMTP_SECURE || port === 465;
+
       this.transporter = nodemailer.createTransport({
         host: ENV.SMTP_HOST,
-        port: ENV.SMTP_PORT,
-        secure: ENV.SMTP_SECURE || ENV.SMTP_PORT === 465,
+        port,
+        secure: isSecure,
         auth: {
           user: ENV.SMTP_USER,
           pass: ENV.SMTP_PASS,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
     }
 
     return this.transporter;
+  }
+
+  /**
+   * Verify SMTP connection status without sending an email
+   */
+  static async verifyConnection(): Promise<{
+    configured: boolean;
+    ready: boolean;
+    host?: string;
+    port?: number;
+    secure?: boolean;
+    user?: string;
+    from?: string;
+    error?: string;
+  }> {
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      return {
+        configured: false,
+        ready: false,
+        error: 'SMTP_HOST or SMTP_USER is not configured in backend environment variables.',
+      };
+    }
+
+    try {
+      await transporter.verify();
+      const maskedUser = ENV.SMTP_USER
+        ? ENV.SMTP_USER.replace(/(?<=^.{2}).*(?=@)/, '***')
+        : '';
+      return {
+        configured: true,
+        ready: true,
+        host: ENV.SMTP_HOST,
+        port: Number(ENV.SMTP_PORT) || 587,
+        secure: ENV.SMTP_SECURE || ENV.SMTP_PORT === 465,
+        user: maskedUser,
+        from: ENV.SMTP_FROM,
+      };
+    } catch (err: any) {
+      logger.error(`[EmailService] SMTP connection verification failed: ${err.message}`);
+      return {
+        configured: true,
+        ready: false,
+        host: ENV.SMTP_HOST,
+        port: Number(ENV.SMTP_PORT) || 587,
+        error: err.message || 'SMTP server connection verification failed.',
+      };
+    }
+  }
+
+  /**
+   * Send B2B customer registration submission confirmation email
+   */
+  static async sendRegistrationConfirmationEmail(
+    params: SendRegistrationConfirmationEmailParams
+  ): Promise<EmailSendResult> {
+    const { to, customerName, businessName, referenceNumber, phone } = params;
+
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      logger.info(
+        `[EmailService] SMTP not configured. Skipped sending registration confirmation email to ${to} (${businessName}).`
+      );
+      return {
+        success: false,
+        skipped: true,
+        error: 'SMTP provider is not configured. Email notification skipped.',
+      };
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wholesale Onboarding Application Received</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #334155; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .header { background: #F47732; padding: 32px 24px; text-align: center; color: #ffffff; }
+    .header h1 { margin: 0 0 6px 0; font-size: 24px; font-weight: 700; }
+    .header p { margin: 0; font-size: 14px; opacity: 0.95; }
+    .content { padding: 32px 24px; }
+    .badge { display: inline-block; background: #FFF1E8; color: #E95B2A; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px; border: 1px solid #FED7AA; margin-bottom: 20px; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; }
+    .info-table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #E2E8F0; }
+    .info-table td.label { font-weight: 600; color: #64748B; width: 40%; }
+    .info-table td.value { font-weight: 700; color: #0F172A; }
+    .instructions { background: #FFF8F3; border-left: 4px solid #F47732; padding: 16px; border-radius: 4px; margin: 24px 0; }
+    .instructions h3 { margin: 0 0 6px 0; font-size: 15px; color: #C2410C; }
+    .instructions p { margin: 0; font-size: 14px; line-height: 1.5; color: #9A3412; }
+    .footer { background: #F8FAFC; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748B; border-top: 1px solid #E2E8F0; }
+    .footer a { color: #F47732; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>NECESSITY INDIA PVT. LTD.</h1>
+      <p>Institutional Supplies & Wholesale Distribution</p>
+    </div>
+    <div class="content">
+      <div class="badge">Application Under Review</div>
+      <p style="font-size: 16px; font-weight: 600; color: #0F172A;">Dear ${customerName},</p>
+      <p>Thank you for submitting your wholesale customer registration with Necessity India for <strong>${businessName}</strong>.</p>
+      <p>Your onboarding profile has been registered in our system and is currently undergoing institutional verification.</p>
+
+      <table class="info-table">
+        <tr>
+          <td class="label">Application Reference</td>
+          <td class="value" style="font-family: monospace; color: #F47732;">${referenceNumber}</td>
+        </tr>
+        <tr>
+          <td class="label">Business Firm</td>
+          <td class="value">${businessName}</td>
+        </tr>
+        <tr>
+          <td class="label">Authorized Contact</td>
+          <td class="value">${customerName}</td>
+        </tr>
+        <tr>
+          <td class="label">Registered Email</td>
+          <td class="value">${to}</td>
+        </tr>
+        <tr>
+          <td class="label">Registered Phone</td>
+          <td class="value">+91 ${phone}</td>
+        </tr>
+      </table>
+
+      <div class="instructions">
+        <h3>What Happens Next?</h3>
+        <p>To protect wholesale prices and trade margins, every account is reviewed by our compliance team. Once verified, you will receive an account approval notification email unlocking institutional pricing and ordering lines.</p>
+      </div>
+
+      <p style="font-size: 13px; color: #64748B;">If you have any questions or wish to submit additional trade documentation, please reply to this email or contact our support team.</p>
+    </div>
+    <div class="footer">
+      <p>Necessity India Pvt. Ltd. | Customer Support: <a href="mailto:${ENV.SUPPORT_EMAIL}">${ENV.SUPPORT_EMAIL}</a> | Phone: ${ENV.SUPPORT_PHONE}</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const textContent = `
+NECESSITY INDIA PVT. LTD.
+Wholesale Onboarding Application Received
+
+Dear ${customerName},
+
+Thank you for submitting your wholesale customer registration for ${businessName}.
+Your onboarding application has been received and is currently under institutional verification.
+
+Application Summary:
+- Application Reference: ${referenceNumber}
+- Business Firm: ${businessName}
+- Contact Person: ${customerName}
+- Registered Email: ${to}
+- Mobile: +91 ${phone}
+
+What Happens Next:
+Our compliance team will review your submitted business credentials. Once approved, you will receive an account activation notification email with access to wholesale catalogs and ordering lines.
+
+Support Contact:
+Email: ${ENV.SUPPORT_EMAIL}
+Phone: ${ENV.SUPPORT_PHONE}
+
+Necessity India Pvt. Ltd.
+    `.trim();
+
+    try {
+      const info = await transporter.sendMail({
+        from: ENV.SMTP_FROM,
+        to,
+        subject: `Wholesale Application Received – Reference #${referenceNumber.slice(-8).toUpperCase()}`,
+        text: textContent,
+        html: htmlContent,
+      });
+
+      logger.info(
+        `[EmailService] Registration confirmation email sent to ${to} (MessageId: ${info.messageId})`
+      );
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      logger.error(`[EmailService] Failed to send registration email to ${to}: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**

@@ -4,6 +4,8 @@ import { User } from '../users/user.model';
 import { Retailer } from '../retailers/retailer.model';
 import { TokenService, JwtTokenPayload } from './token.service';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
+import { logger } from '../../config/logger';
 import { AppError } from '../../utils/errors';
 import { UserRole, AccountStatus, CreditStatus } from '@necessity/shared';
 
@@ -153,6 +155,19 @@ export class AuthService {
         ipAddress: ip,
         userAgent,
       });
+
+      // Safe, non-blocking registration confirmation email to customer
+      if (normalizedEmail) {
+        EmailService.sendRegistrationConfirmationEmail({
+          to: normalizedEmail,
+          customerName: contactPerson,
+          businessName: retailer.businessName,
+          referenceNumber: retailer._id.toString(),
+          phone: normalizedPhone,
+        }).catch((err) => {
+          logger.error(`[AuthService] Non-blocking registration confirmation email failed: ${err.message}`);
+        });
+      }
 
       const sessionId = TokenService.generateSessionId();
       user.currentRefreshSessionId = sessionId;

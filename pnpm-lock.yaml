@@ -91,6 +91,9 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: ^3.1.1
         version: 3.1.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3))(react@19.2.3)
+      '@react-native-clipboard/clipboard':
+        specifier: ^1.17.1
+        version: 1.17.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3))(react@19.2.3)
       '@react-navigation/bottom-tabs':
         specifier: ^7.21.0
         version: 7.21.0(782af9400746b35baaee80f9ef98bc89)
@@ -1372,6 +1375,19 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  '@react-native-clipboard/clipboard@1.17.1':
+    resolution: {integrity: sha512-PsnDv2iU3gliNMQWrrO1JJ+orLdlZSVY4DM8KmLIqrn3a6l8OK+XgL2iXPnyTQT7hRs+Es+oeCX/Ah3tk7oBTg==}
+    peerDependencies:
+      react: '>= 16.9.0'
+      react-native: '>= 0.61.5'
+      react-native-macos: '>= 0.61.0'
+      react-native-windows: '>= 0.61.0'
+    peerDependenciesMeta:
+      react-native-macos:
+        optional: true
+      react-native-windows:
+        optional: true
 
   '@react-native-community/cli-clean@20.2.0':
     resolution: {integrity: sha512-krqbhFiwHN8l5wZ2XTcrNq9N+DqDWHxW8RK0bIcrK0O+fMvjYi9e/1Pnx2W0CTotOVcZpHzUbgZ4TQVF231Skw==}
@@ -5951,6 +5967,11 @@ snapshots:
   '@react-native-async-storage/async-storage@3.1.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3))(react@19.2.3)':
     dependencies:
       idb: 8.0.3
+      react: 19.2.3
+      react-native: 0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3)
+
+  '@react-native-clipboard/clipboard@1.17.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3))(react@19.2.3)':
+    dependencies:
       react: 19.2.3
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@18.3.31)(react@19.2.3)
 

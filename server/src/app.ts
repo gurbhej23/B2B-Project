@@ -20,6 +20,7 @@ import { discountRouter } from './modules/discounts/discount.routes';
 import { dashboardRouter } from './modules/dashboard/dashboard.routes';
 import { analyticsRouter } from './modules/analytics/analytics.routes';
 import pricingRouter from './modules/pricing/pricing.routes';
+import { EmailService } from './modules/email/email.service';
 import { sendSuccess } from './utils/response';
 import { AppError } from './utils/errors';
 
@@ -133,6 +134,16 @@ export function createApp(): express.Application {
       memoryUsage: process.memoryUsage(),
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // Email / SMTP Health Diagnostic Endpoint
+  app.get(`${ENV.API_PREFIX}/health/email`, async (_req, res) => {
+    const status = await EmailService.verifyConnection();
+    sendSuccess(
+      res,
+      status,
+      status.ready ? 'SMTP connection is active and ready' : 'SMTP connection check completed'
+    );
   });
 
   // Feature Modules

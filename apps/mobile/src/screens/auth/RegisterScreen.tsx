@@ -14,6 +14,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
@@ -94,6 +95,17 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [isCheckingApproval, setIsCheckingApproval] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyReference = () => {
+    if (submittedData?.referenceId) {
+      Clipboard.setString(submittedData.referenceId);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2500);
+    }
+  };
 
   // Validation per step
   const validateStep1 = (): string | null => {
@@ -322,26 +334,56 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
             {/* Reference Details Box */}
             <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Application Reference</Text>
-                <Text style={styles.summaryValueHighlight}>{submittedData?.referenceId}</Text>
+              <View style={styles.referenceContainer}>
+                <View style={styles.referenceHeaderRow}>
+                  <Text style={styles.referenceHeaderLabel}>APPLICATION REFERENCE</Text>
+                  <TouchableOpacity
+                    style={[styles.copyButton, isCopied && styles.copyButtonSuccess]}
+                    onPress={handleCopyReference}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.copyButtonText, isCopied && styles.copyButtonTextSuccess]}>
+                      {isCopied ? '✓ Copied' : '📋 Copy'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.referenceValueBox}>
+                  <Text
+                    style={styles.referenceValueText}
+                    selectable={true}
+                    numberOfLines={2}
+                  >
+                    {submittedData?.referenceId || 'N/A'}
+                  </Text>
+                </View>
               </View>
+
               <View style={styles.summaryDivider} />
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Business Firm</Text>
-                <Text style={styles.summaryValue}>{submittedData?.businessName}</Text>
+                <Text style={styles.summaryValue} numberOfLines={2}>
+                  {submittedData?.businessName || '-'}
+                </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Primary Contact</Text>
-                <Text style={styles.summaryValue}>{submittedData?.name}</Text>
+                <Text style={styles.summaryValue} numberOfLines={2}>
+                  {submittedData?.name || '-'}
+                </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Registered Email</Text>
-                <Text style={styles.summaryValue}>{submittedData?.email}</Text>
+                <Text style={styles.summaryValue} numberOfLines={3}>
+                  {submittedData?.email || '-'}
+                </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Mobile</Text>
-                <Text style={styles.summaryValue}>+91 {submittedData?.phone}</Text>
+                <Text style={styles.summaryValue}>
+                  +91 {submittedData?.phone || '-'}
+                </Text>
               </View>
             </View>
 
@@ -1483,24 +1525,90 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 18,
-    marginTop: 24,
+    padding: 16,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  referenceContainer: {
+    width: '100%',
+  },
+  referenceHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  referenceHeaderLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.slate500,
+    letterSpacing: 0.5,
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF1E8',
+    borderColor: '#FED7AA',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  copyButtonSuccess: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  copyButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  copyButtonTextSuccess: {
+    color: '#059669',
+  },
+  referenceValueBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FDBA74',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: '100%',
+  },
+  referenceValueText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.primary,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 0.5,
+    flexWrap: 'wrap',
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 12,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginVertical: 6,
+    gap: 12,
   },
   summaryLabel: {
     fontSize: 13,
     color: colors.slate500,
     fontWeight: '600',
+    width: '38%',
+    flexShrink: 0,
   },
   summaryValue: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.slate900,
+    flex: 1,
+    textAlign: 'right',
+    flexWrap: 'wrap',
   },
   summaryValueHighlight: {
     fontSize: 14,
@@ -1516,11 +1624,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
-  },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 10,
   },
   verificationNoticeBox: {
     flexDirection: 'row',
